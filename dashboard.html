@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — FeedCoin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #0d0f17;
+      --text-color: #f3f4f6;
+      --text-muted: #9ca3af;
+      --card-bg: rgba(255, 255, 255, 0.04);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --input-bg: rgba(255, 255, 255, 0.05);
+      --input-border: rgba(255, 255, 255, 0.12);
+      --primary-gradient: linear-gradient(135deg, #6c5ce7, #3b82f6);
+      --accent-emerald: #10b981;
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+      --font-heading: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    html.light {
+      --bg-color: #f8fafc;
+      --text-color: #0f172a;
+      --text-muted: #64748b;
+      --card-bg: rgba(255, 255, 255, 0.7);
+      --card-border: rgba(0, 0, 0, 0.08);
+      --input-bg: rgba(0, 0, 0, 0.03);
+      --input-border: rgba(0, 0, 0, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      min-height: 100vh;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Background Blobs */
+    .blob {
+      position: fixed;
+      width: 350px;
+      height: 350px;
+      filter: blur(120px);
+      z-index: -1;
+      border-radius: 50%;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .blob-purple { top: 10%; left: -100px; background: #6c5ce7; }
+    .blob-blue { top: 40%; right: -100px; background: #3b82f6; }
+
+    /* Glassmorphism Cards */
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-family: var(--font-heading);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 20px;
+      border-radius: 99px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: var(--primary-gradient);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(108, 92, 231, 0.4);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(108, 92, 231, 0.6);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-color);
+    }
+    .btn-ghost:hover {
+      background: var(--card-border);
+    }
+
+    /* Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 16px 0;
+    }
+    .nav-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-color);
+      text-decoration: none;
+      font-family: var(--font-heading);
+    }
+    .logo span { color: #6c5ce7; }
+
+    .header-user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-user-info .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #fff;
+    }
+    .user-display-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .nav-actions { display: flex; gap: 12px; align-items: center; }
+    .theme-toggle { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
+
+    /* Dashboard Layout */
+    .dashboard {
+      padding: 40px 24px 80px;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    /* Balance Items */
+    .balance-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .balance-item span { color: var(--text-muted); }
+    .balance-item h2 { color: var(--accent-emerald); font-size: 1.8rem; }
+
+    /* Mining Card & Animation */
+    .mining-card { text-align: center; }
+    .Coin-btn-wrapper { display: flex; justify-content: center; margin: 20px 0; }
+    .Coin-btn {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 2px solid var(--card-border);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+  font-size: 1rem;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  box-shadow: 0 0 30px rgba(108, 92, 231, 0.5);
+  transition: transform 0.2s ease;
+
+  /* Image Background Configuration */
+  background-image: url('logo.jpg'); /* Replace with your image link or file path */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  
+  /* Text readability backdrop */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.Coin-btn:hover { 
+  transform: scale(1.05); 
+}
+
+.Coin-btn.active { 
+  animation: spin 2s linear infinite; 
+}
+
+@keyframes spin { 
+  100% { transform: rotate(360deg); } 
+}
+    .Coin-btn:hover { transform: scale(1.05); }
+    .Coin-btn.active { animation: spin 2s linear infinite; }
+    .Coin-btn .coin-icon { font-size: 2rem; margin-bottom: 4px; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    .timer-display {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Referral Box */
+    .referral-box {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .referral-box input {
+      flex: 1;
+      padding: 10px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      color: var(--text-color);
+      outline: none;
+    }
+
+    /* Social Task List */
+    .social-task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .task-item {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+    }
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .task-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .task-info strong {
+      color: var(--accent-emerald);
+    }
+    .task-link {
+      color: #3b82f6;
+      font-size: 0.85rem;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .task-link:hover {
+      text-decoration: underline;
+    }
+    .task-input-group {
+      display: flex;
+      gap: 8px;
+    }
+    .task-code-input {
+      flex: 1;
+      padding: 8px 12px;
+      background: var(--bg-color);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      color: var(--text-color);
+      outline: none;
+      font-size: 0.9rem;
+    }
+
+    /* Investment Section */
+    .investment-plans {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .plan-card {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: center;
+    }
+    .plan-card h4 { font-size: 1.1rem; color: #6c5ce7; }
+    .plan-return { font-size: 1.1rem; font-weight: bold; color: var(--accent-emerald); }
+
+    /* Withdrawal Options */
+    .withdrawal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .withdraw-card {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* History List */
+    .history-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--input-bg);
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--accent-emerald);
+    }
+    .history-item small {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+    .earned-amount {
+      color: var(--accent-emerald);
+      font-weight: 700;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--accent-emerald);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 2000;
+    }
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Responsive Spans */
+    @media (max-width: 900px) {
+      .social-tasks-card,
+      .investment-card,
+      .withdrawal-card,
+      .history-card {
+        grid-column: span 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Glows -->
+  <div class="blob blob-purple"></div>
+  <div class="blob blob-blue"></div>
+
+  <!-- Header / Navbar with User Name -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="dashboard.html" class="logo">Feed<span>Coin</span></a>
+      
+      <!-- Header User Profile Info -->
+      <div class="header-user-info">
+        <div class="avatar" id="headerAvatar">A</div>
+        <span class="user-display-name" id="headerUserName">Alex Rivers</span>
+      </div>
+
+      <div class="nav-actions">
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle Theme">🌙</button>
+        <button class="btn btn-ghost" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Dashboard Grid -->
+  <section class="dashboard container">
+    <div class="dashboard-grid">
+      
+      <!-- Balances Overview Card -->
+      <div class="glass-card wallet-card">
+        <h3>USD Wallet Balance</h3>
+        <div class="balance-item">
+          <span>Total Balance</span>
+          <h2 id="totalCoins">$10.00</h2>
+        </div>
+        <div class="balance-item">
+          <span>Active Investment</span>
+          <p id="activeInvestments">$0.00</p>
+        </div>
+      </div>
+
+      <!-- Main Feed Mining Task -->
+            <div class="glass-card mining-card">
+        <h3>24-Hour Mining Tap</h3>
+        <p>Tap to extract daily cash rewards.</p>
+        <h3 style="color: green;">Tap on the Image Logo to mine</h3>
+        <div class="Coin-btn-wrapper">
+            <button class="Coin-btn" id="CoinBtn">
+            </button>
+        </div>
+        <div class="timer-display" id="miningTimer">Ready to Mine</div>
+        </div>
+
+      <!-- Referrer Info & Earnings Card -->
+      <div class="glass-card referral-card">
+        <h3>Referral Center</h3>
+        <p>Invited by: <strong id="referrerName">@crypto_king</strong></p>
+        <div class="balance-item" style="margin: 12px 0;">
+          <span>Referral Earnings</span>
+          <h3 id="referralEarnings">$4.00</h3>
+        </div>
+        <div class="referral-box">
+          <input type="text" id="refCodeInput" value="ALEX-Cash" readonly />
+          <button class="btn btn-primary" id="copyRefBtn">Copy</button>
+        </div>
+      </div>
+
+      <!-- Investment Tier Section ($2, $5, $10, $15, $20) -->
+      <div class="glass-card investment-card" style="grid-column: span 2;">
+        <h3>USD Investment Plans</h3>
+        <p>Stake your balance into guaranteed daily yield pools.</p>
+        <div class="investment-plans">
+          <div class="plan-card">
+            <h4>Tier 1</h4>
+            <div class="plan-return">$2.00</div>
+            <small>Yield: +5%/wk</small>
+            <button class="btn btn-primary invest-btn" data-plan="Tier 1 ($2)" data-min="2">Invest $2</button>
+          </div>
+          <div class="plan-card">
+            <h4>Tier 2</h4>
+            <div class="plan-return">$5.00</div>
+            <small>Yield: +8%/wk</small>
+            <button class="btn btn-primary invest-btn" data-plan="Tier 2 ($5)" data-min="5">Invest $5</button>
+          </div>
+          <div class="plan-card">
+            <h4>Tier 3</h4>
+            <div class="plan-return">$10.00</div>
+            <small>Yield: +12%/wk</small>
+            <button class="btn btn-primary invest-btn" data-plan="Tier 3 ($10)" data-min="10">Invest $10</button>
+          </div>
+          <div class="plan-card">
+            <h4>Tier 4</h4>
+            <div class="plan-return">$15.00</div>
+            <small>Yield: +18%/wk</small>
+            <button class="btn btn-primary invest-btn" data-plan="Tier 4 ($15)" data-min="15">Invest $15</button>
+          </div>
+          <div class="plan-card">
+            <h4>Tier 5</h4>
+            <div class="plan-return">$20.00</div>
+            <small>Yield: +25%/wk</small>
+            <button class="btn btn-primary invest-btn" data-plan="Tier 5 ($20)" data-min="20">Invest $20</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Social Tasks ($0.33 per Video) -->
+      <div class="glass-card social-tasks-card" style="grid-column: span 2;">
+        <h3>Watch & Earn Daily Tasks ($0.33 each)</h3>
+        <p>Watch 3 video tasks below ($0.33/each) to earn nearly $1.00 daily. Enter code & submit.</p>
+        <div class="social-task-list">
+          
+          <div class="task-item">
+            <div class="task-header">
+              <div class="task-info">
+                <span>📹 Watch YouTube Short 1</span>
+                <strong>+$0.33 USD</strong>
+                <a href="https://youtube.com" target="_blank" class="task-link">🔗 Open Video Link</a>
+              </div>
+            </div>
+            <div class="task-input-group">
+              <input type="text" class="task-code-input" placeholder="Enter video code..." />
+              <button class="btn btn-primary task-btn" data-reward="0.33" data-code="YT01">Submit</button>
+            </div>
+          </div>
+
+          <div class="task-item">
+            <div class="task-header">
+              <div class="task-info">
+                <span>📹 Watch YouTube Short 2</span>
+                <strong>+$0.33 USD</strong>
+                <a href="https://youtube.com" target="_blank" class="task-link">🔗 Open Video Link</a>
+              </div>
+            </div>
+            <div class="task-input-group">
+              <input type="text" class="task-code-input" placeholder="Enter video code..." />
+              <button class="btn btn-primary task-btn" data-reward="0.33" data-code="YT02">Submit</button>
+            </div>
+          </div>
+
+          <div class="task-item">
+            <div class="task-header">
+              <div class="task-info">
+                <span>📹 Watch YouTube Short 3</span>
+                <strong>+$0.33 USD</strong>
+                <a href="https://youtube.com" target="_blank" class="task-link">🔗 Open Video Link</a>
+              </div>
+            </div>
+            <div class="task-input-group">
+              <input type="text" class="task-code-input" placeholder="Enter video code..." />
+              <button class="btn btn-primary task-btn" data-reward="0.33" data-code="YT03">Submit</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 3 Times Withdrawal Section -->
+      <div class="glass-card withdrawal-card" style="grid-column: span 2;">
+        <h3>Withdraw Earnings (Up to 3 Times Maximum)</h3>
+        <p>Withdraw your balance directly in USD. You have 3 withdrawal attempts allowed.</p>
+        <div class="withdrawal-grid">
+          <div class="withdraw-card">
+            <h4>Withdrawal #1</h4>
+            <small>Status: Ready</small>
+            <button class="btn btn-primary withdraw-btn" data-slot="1">Request Payout</button>
+          </div>
+          <div class="withdraw-card">
+            <h4>Withdrawal #2</h4>
+            <small>Status: Ready</small>
+            <button class="btn btn-primary withdraw-btn" data-slot="2">Request Payout</button>
+          </div>
+          <div class="withdraw-card">
+            <h4>Withdrawal #3</h4>
+            <small>Status: Ready</small>
+            <button class="btn btn-primary withdraw-btn" data-slot="3">Request Payout</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feed Earnings History -->
+      <div class="glass-card history-card" style="grid-column: span 2;">
+        <h3>Transaction & Yield History</h3>
+        <ul class="history-list" id="historyList">
+          <li class="history-item">
+            <div>
+              <strong>Daily Tap Mining</strong>
+              <small>Today, 10:30 AM</small>
+            </div>
+            <span class="earned-amount">+$1.00 USD</span>
+          </li>
+          <li class="history-item">
+            <div>
+              <strong>YouTube Watch Task</strong>
+              <small>Today, 09:15 AM</small>
+            </div>
+            <span class="earned-amount">+$0.33 USD</span>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Auth Guard Check
+      const isLoggedIn = localStorage.getItem('is_logged_in') === 'true';
+      if (!isLoggedIn) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      const themeToggle = document.getElementById('themeToggle');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const CoinBtn = document.getElementById('CoinBtn');
+      const CoinBtnText = document.getElementById('CoinBtnText');
+      const totalCoins = document.getElementById('totalCoins');
+      const pendingCoins = document.getElementById('activeInvestments');
+      const toast = document.getElementById('toast');
+      const headerUserName = document.getElementById('headerUserName');
+      const headerAvatar = document.getElementById('headerAvatar');
+      const historyList = document.getElementById('historyList');
+
+      // Profile Setup
+      const savedName = localStorage.getItem('user_name') || 'Alex Rivers';
+      headerUserName.textContent = savedName;
+      headerAvatar.textContent = savedName.charAt(0).toUpperCase();
+
+      let currentBalance = 10.00;
+      let activeInvested = 0.00;
+      let isMining = false;
+      let completedWithdrawals = 0;
+
+      // Theme Switcher
+      themeToggle?.addEventListener('click', () => {
+        document.documentElement.classList.toggle('light');
+        themeToggle.textContent = document.documentElement.classList.contains('light') ? '☀️' : '🌙';
+      });
+
+      // Logout User
+      logoutBtn?.addEventListener('click', () => {
+        localStorage.removeItem('is_logged_in');
+        window.location.href = 'index.html';
+      });
+
+      function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+      }
+
+      function addHistoryItem(title, amount, isDeduction = false) {
+        const li = document.createElement('li');
+        li.className = 'history-item';
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const sign = isDeduction ? '-' : '+';
+        const colorStyle = isDeduction ? 'style="color: #ef4444;"' : '';
+
+        li.innerHTML = `
+          <div>
+            <strong>${title}</strong>
+            <small>Today, ${now}</small>
+          </div>
+          <span class="earned-amount" ${colorStyle}>${sign}$${amount.toFixed(2)} USD</span>
+        `;
+        historyList.prepend(li);
+      }
+
+      // Tap Mining Logic
+      CoinBtn?.addEventListener('click', () => {
+        if (isMining) return;
+
+        isMining = true;
+        CoinBtn.classList.add('active');
+        CoinBtnText.textContent = 'Mining...';
+
+        setTimeout(() => {
+          isMining = false;
+          CoinBtn.classList.remove('active');
+          CoinBtnText.textContent = 'Mined!';
+          
+          const reward = 0.50;
+          currentBalance += reward;
+          totalCoins.textContent = `$${currentBalance.toFixed(2)}`;
+          
+          addHistoryItem('Daily Cash Mining', reward);
+          
+          if (window.confetti) {
+            confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+          }
+          showToast(`Mined +$${reward.toFixed(2)} USD!`);
+        }, 2000);
+      });
+
+      // Task Verification Logic ($0.33 reward)
+      document.querySelectorAll('.task-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const reward = parseFloat(btn.dataset.reward);
+          const taskContainer = btn.closest('.task-item');
+          const codeInput = taskContainer.querySelector('.task-code-input');
+          const taskTitle = taskContainer.querySelector('.task-info span').textContent;
+          const userEnteredCode = codeInput.value.trim();
+
+          if (!userEnteredCode) {
+            showToast('Please enter the code from the video!');
+            return;
+          }
+
+          btn.disabled = true;
+          btn.textContent = 'Verifying...';
+
+          setTimeout(() => {
+            btn.textContent = 'Submitted';
+            btn.classList.replace('btn-primary', 'btn-ghost');
+            codeInput.disabled = true;
+
+            currentBalance += reward;
+            totalCoins.textContent = `$${currentBalance.toFixed(2)}`;
+
+            addHistoryItem(taskTitle, reward);
+            if (window.confetti) {
+              confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 } });
+            }
+            showToast(`Code Verified! Earned +$${reward.toFixed(2)} USD!`);
+          }, 1500);
+        });
+      });
+
+      // Investment Tier Handling ($2, $5, $10, $15, $20)
+      document.querySelectorAll('.invest-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const planName = btn.dataset.plan;
+          const minAmount = parseFloat(btn.dataset.min);
+
+          if (currentBalance < minAmount) {
+            showToast(`Insufficient balance! Minimum required: $${minAmount.toFixed(2)} USD.`);
+            return;
+          }
+
+          currentBalance -= minAmount;
+          activeInvested += minAmount;
+
+          totalCoins.textContent = `$${currentBalance.toFixed(2)}`;
+          pendingCoins.textContent = `$${activeInvested.toFixed(2)}`;
+
+          addHistoryItem(`Invested in ${planName}`, minAmount, true);
+          showToast(`Successfully invested $${minAmount.toFixed(2)} in ${planName}!`);
+        });
+      });
+
+      // Withdrawal Slot Handler (Max 3 Times)
+      document.querySelectorAll('.withdraw-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (currentBalance <= 0) {
+            showToast('No funds available for withdrawal!');
+            return;
+          }
+
+          const slotNum = btn.dataset.slot;
+          const withdrawAmount = currentBalance;
+
+          currentBalance = 0;
+          totalCoins.textContent = `$0.00`;
+
+          btn.disabled = true;
+          btn.textContent = 'Processed';
+          btn.classList.replace('btn-primary', 'btn-ghost');
+          btn.previousElementSibling.textContent = 'Status: Paid';
+
+          completedWithdrawals++;
+          addHistoryItem(`Withdrawal #${slotNum}`, withdrawAmount, true);
+          showToast(`Successfully withdrew $${withdrawAmount.toFixed(2)} USD!`);
+        });
+      });
+
+      // Copy Referral Code
+      document.getElementById('copyRefBtn')?.addEventListener('click', () => {
+        const code = document.getElementById('refCodeInput').value;
+        navigator.clipboard.writeText(code);
+        showToast('Referral link copied!');
+      });
+    });
+  </script>
+</body>
+</html>
