@@ -27,16 +27,28 @@
   <nav class="navbar">
     <div class="container nav-container">
       <a href="index.html" class="logo">Feed<span>Coin</span></a>
-      <div class="nav-links">
+      
+      <!-- Nav Links -->
+      <div class="nav-links" id="navLinks">
         <a href="#features">Features</a>
         <a href="#how-it-works">How It Works</a>
         <a href="#faq">FAQ</a>
+        <a href="Emersonsoftwareservices.html">EMERSON SOFTWARE SERVICES</a>
       </div>
+
+      <!-- Action buttons & Theme toggle -->
       <div class="nav-actions">
         <button class="theme-toggle" id="themeToggle" aria-label="Toggle Theme">🌙</button>
         <button class="btn btn-ghost" id="openLoginBtn">Login</button>
         <button class="btn btn-primary" id="openRegisterBtn">Create Account</button>
       </div>
+
+      <!-- Hamburger Button (Visible on mobile) -->
+      <button class="hamburger" id="hamburgerBtn" aria-label="Toggle Navigation Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </nav>
 
@@ -146,13 +158,13 @@
         <p>📧 Email: support@FeedCoin.io</p>
         <p>📞 Phone: +1 (800) 555-Coin</p>
         <p>📍 Address: 100 Web3 Avenue, Suite 400, San Francisco, CA 94107</p>
+        <a style="color: white; text-decoration: navajowhite;" href="emersonsoftwareservices.html">EMERSON SOFTWARE SERVICES</a>
       </div>
     </div>
   </footer>
 
   <div class="toast" id="toast"></div>
 
-  <script type="module" src="firebase-config.js"></script>
-  <script src="app.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
