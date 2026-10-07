@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emerson Software Services | Premium Web & App Development</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              cyan: '#06b6d4',
+              accent: '#6366f1',
+              dark: '#0a0f1d',
+              card: '#0f172a',
+              cardBorder: '#1e293b'
+            }
+          },
+          animation: {
+            'pulse-glow': 'pulseGlow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+          },
+          keyframes: {
+            pulseGlow: {
+              '0%, 100%': { opacity: 0.35, transform: 'scale(1)' },
+              '50%': { opacity: 0.7, transform: 'scale(1.05)' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-10px)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Core Styles -->
+  <style>
+    body {
+      background-color: #070b14;
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+    
+    /* Modern Glassmorphism */
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .glass-card-hover {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card-hover:hover {
+      border-color: rgba(56, 189, 248, 0.35);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 36px -10px rgba(6, 182, 212, 0.15);
+    }
+
+    .glass-nav {
+      background: rgba(7, 11, 20, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Gradients */
+    .gradient-text {
+      background: linear-gradient(135deg, #ffffff 10%, #38bdf8 55%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .gradient-btn {
+      background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4f46e5 100%);
+      background-size: 200% 200%;
+      transition: all 0.3s ease;
+    }
+    .gradient-btn:hover {
+      background-position: right center;
+      box-shadow: 0 0 25px rgba(37, 99, 235, 0.5);
+    }
+
+    /* Grid background */
+    .tech-grid {
+      background-size: 40px 40px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    }
+
+    /* Custom range input */
+    input[type=range] {
+      accent-color: #38bdf8;
+    }
+    
+    /* Toast transition */
+    #notificationToast {
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased text-slate-300 relative selection:bg-cyan-500 selection:text-white">
+
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-cyan-600/15 rounded-full blur-3xl animate-pulse-glow"></div>
+    <div class="absolute top-1/3 -right-40 w-[30rem] h-[30rem] bg-indigo-600/15 rounded-full blur-3xl animate-pulse-glow" style="animation-delay: 2s;"></div>
+    <div class="absolute -bottom-20 left-1/3 w-[26rem] h-[26rem] bg-sky-500/10 rounded-full blur-3xl"></div>
+  </div>
+
+  <header class="fixed top-0 left-0 right-0 z-50 glass-nav transition-all duration-300" id="mainHeader">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <!-- Brand Logo -->
+      <a href="#" class="flex items-center gap-3 group focus:outline-none">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center text-white font-mono font-bold text-xl shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+          E
+        </div>
+        <div class="flex flex-col">
+          <span class="font-extrabold tracking-wider text-base sm:text-lg text-white font-mono leading-none">
+            EMERSON
+          </span>
+          <span class="text-[10px] tracking-widest text-cyan-400 font-semibold uppercase mt-0.5">
+            Software Services
+          </span>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation Links -->
+      <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+        <a href="#services" class="hover:text-cyan-400 transition-colors">Services</a>
+        <a href="#portfolio" class="hover:text-cyan-400 transition-colors">Portfolio</a>
+        <a href="#pricing" class="hover:text-cyan-400 transition-colors">Pricing & Plans</a>
+        <a href="#calculator" class="hover:text-cyan-400 transition-colors">Cost Calculator</a>
+        <a href="#faq" class="hover:text-cyan-400 transition-colors">FAQ</a>
+        <a href="#contact" class="hover:text-cyan-400 transition-colors">Contact</a>
+      </nav>
+
+      <!-- Action Button -->
+      <div class="hidden sm:flex items-center gap-3">
+        <a href="#pricing" class="gradient-btn text-white px-5 py-2.5 rounded-xl font-semibold text-sm shadow-md hover:shadow-cyan-500/20 flex items-center gap-2">
+          <span>Get Started</span>
+          <i class="fa-solid fa-arrow-right text-xs"></i>
+        </a>
+      </div>
+
+      <!-- Mobile Menu Toggle Button -->
+      <button id="mobileMenuBtn" aria-label="Toggle menu" class="md:hidden text-slate-300 hover:text-white p-2 rounded-lg bg-slate-800/60 border border-slate-700">
+        <i class="fa-solid fa-bars text-lg" id="menuIcon"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Dropdown Menu -->
+    <div id="mobileMenu" class="hidden md:hidden px-6 pt-3 pb-6 border-t border-slate-800/80 bg-slate-950/95 space-y-4">
+      <a href="#services" class="block py-2 text-slate-200 hover:text-cyan-400 font-medium mobile-nav-link">Services</a>
+      <a href="#portfolio" class="block py-2 text-slate-200 hover:text-cyan-400 font-medium mobile-nav-link">Portfolio</a>
+      <a href="#pricing" class="block py-2 text-slate-200 hover:text-cyan-400 font-medium mobile-nav-link">Pricing & Plans</a>
+      <a href="#calculator" class="block py-2 text-slate-200 hover:text-cyan-400 font-medium mobile-nav-link">Cost Calculator</a>
+      <a href="#faq" class="block py-2 text-slate-200 hover:text-cyan-400 font-medium mobile-nav-link">FAQ</a>
+      <a href="#contact" class="block py-2 text-slate-200 hover:text-cyan-400 font-medium mobile-nav-link">Contact</a>
+      <a href="#pricing" class="block w-full text-center gradient-btn text-white py-3 rounded-xl font-semibold text-sm mt-3 mobile-nav-link">
+        View Pricing & Pay Now
+      </a>
+    </div>
+  </header>
+
+  <main class="relative z-10 pt-20">
+    <section class="relative min-h-[90vh] flex items-center justify-center py-20 px-4 sm:px-6 lg:px-8 tech-grid">
+      <div class="max-w-5xl mx-auto text-center">
+        <!-- Live status badge -->
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800/80 border border-cyan-500/30 text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-6 animate-float">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>Accepting New Q3/Q4 Projects • Rapid Turnaround</span>
+        </div>
+
+        <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+          Architecting High-Yield <br class="hidden sm:inline">
+          <span class="gradient-text">Websites & Mobile Apps</span>
+        </h1>
+
+        <p class="text-base sm:text-xl text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed font-light">
+          At <strong class="text-slate-200 font-semibold">Emerson Software Services</strong>, we engineer bulletproof web applications, high-converting digital storefronts, and cross-platform mobile apps built to scale revenue. Transparent fixed pricing, zero hidden fees.
+        </p>
+
+        <!-- CTA row -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto mb-16">
+          <a href="#pricing" class="w-full sm:w-auto px-8 py-4 gradient-btn text-white rounded-xl font-bold text-base shadow-xl shadow-cyan-500/25 flex items-center justify-center gap-3">
+            <span>Explore Pricing & Pay</span>
+            <i class="fa-solid fa-credit-card text-sm"></i>
+          </a>
+          <a href="#calculator" class="w-full sm:w-auto px-7 py-4 glass-card hover:bg-slate-800 text-slate-200 rounded-xl font-semibold text-base transition-colors flex items-center justify-center gap-2 border border-slate-700">
+            <span>Calculate Custom Quote</span>
+            <i class="fa-solid fa-calculator text-cyan-400"></i>
+          </a>
+        </div>
+
+        <!-- Metric highlights -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto pt-6 border-t border-slate-800/80">
+          <div class="p-4 rounded-xl bg-slate-900/40 border border-slate-800">
+            <div class="text-3xl font-extrabold text-white font-mono">140+</div>
+            <div class="text-xs text-slate-400 uppercase tracking-wider mt-1">Apps Delivered</div>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900/40 border border-slate-800">
+            <div class="text-3xl font-extrabold text-cyan-400 font-mono">99.8%</div>
+            <div class="text-xs text-slate-400 uppercase tracking-wider mt-1">On-Time Launch</div>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900/40 border border-slate-800">
+            <div class="text-3xl font-extrabold text-indigo-400 font-mono">100%</div>
+            <div class="text-xs text-slate-400 uppercase tracking-wider mt-1">Code Ownership</div>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900/40 border border-slate-800">
+            <div class="text-3xl font-extrabold text-emerald-400 font-mono">4.9/5</div>
+            <div class="text-xs text-slate-400 uppercase tracking-wider mt-1">Client Rating</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="services" class="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <h2 class="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-2">Capabilities</h2>
+        <p class="text-3xl sm:text-4xl font-extrabold text-white">Full-Stack Digital Solutions</p>
+        <p class="text-slate-400 mt-3 text-base">From interactive high-converting web experiences to mission-critical distributed mobile solutions.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Service Card 1 -->
+        <div class="glass-card glass-card-hover p-8 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-2xl mb-6">
+              <i class="fa-solid fa-code"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">Custom Web Engineering</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">
+              Enterprise React, Next.js, and Node architectures crafted for lightning-fast speeds, dynamic real-time data, and frictionless responsive viewports.
+            </p>
+          </div>
+          <ul class="space-y-2 text-xs text-slate-300 pt-4 border-t border-slate-800">
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyan-400"></i> Next.js / Tailwind / TypeScript</li>
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyan-400"></i> Headless CMS & Custom APIs</li>
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyan-400"></i> Core Web Vitals Optimization</li>
+          </ul>
+        </div>
+
+        <!-- Service Card 2 -->
+        <div class="glass-card glass-card-hover p-8 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-2xl mb-6">
+              <i class="fa-solid fa-mobile-screen-button"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">Mobile App Development</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">
+              Native and cross-platform iOS & Android mobile applications built using React Native and Flutter. Smooth 60fps animations and offline sync.
+            </p>
+          </div>
+          <ul class="space-y-2 text-xs text-slate-300 pt-4 border-t border-slate-800">
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-indigo-400"></i> iOS & Android App Store Ready</li>
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-indigo-400"></i> Push Notifications & Biometrics</li>
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-indigo-400"></i> Secure In-App Payment Flow</li>
+          </ul>
+        </div>
+
+        <!-- Service Card 3 -->
+        <div class="glass-card glass-card-hover p-8 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 text-2xl mb-6">
+              <i class="fa-solid fa-cart-shopping"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">E-Commerce & SaaS Platforms</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">
+              Scalable online stores and multi-tenant SaaS platforms with secure Stripe, PayPal, and cryptocurrency payment rails for immediate revenue collection.
+            </p>
+          </div>
+          <ul class="space-y-2 text-xs text-slate-300 pt-4 border-t border-slate-800">
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-sky-400"></i> Stripe / PayPal / Gateway Integration</li>
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-sky-400"></i> Inventory & Subscription Billing</li>
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-sky-400"></i> High-Conversion Checkout UX</li>
+          </ul>
+        </div>
+
+        <!-- Service Card 4 -->
+        <div class="glass-card glass-card-hover p-8 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-2xl mb-6">
+              <i class="fa-solid fa-cloud"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">Cloud, DB & DevOps</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">
+              Zero-downtime deployment pipelines, automated backups, and scalable microservices on AWS, Google Cloud, and Supabase / PostgreSQL.
+            </p>
+          </div>
+          <ul class="space-y-2 text-xs text-slate-300 pt-4 border-t border-slate-800">
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> CI/CD Pipelines & Docker</li>
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Database Architecture & Sharding</li>
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> SSL, DDoS Protection & WAF</li>
+          </ul>
+        </div>
+
+        <!-- Service Card 5 -->
+        <div class="glass-card glass-card-hover p-8 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 text-2xl mb-6">
+              <i class="fa-solid fa-palette"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">UI/UX & Design Systems</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">
+              Pixel-perfect Figma prototypes, bespoke visual identity, and component libraries crafted for maximum customer retention and clear hierarchy.
+            </p>
+          </div>
+          <ul class="space-y-2 text-xs text-slate-300 pt-4 border-t border-slate-800">
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-purple-400"></i> Interactive Clickable Prototypes</li>
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-purple-400"></i> Design Tokens & Style Guides</li>
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-purple-400"></i> Usability & Accessibility Testing</li>
+          </ul>
+        </div>
+
+        <!-- Service Card 6 -->
+        <div class="glass-card glass-card-hover p-8 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-2xl mb-6">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">AI & Automation Integrations</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">
+              Elevate your platform with custom LLM assistants, autonomous workflows, RAG knowledge bases, and smart predictive search algorithms.
+            </p>
+          </div>
+          <ul class="space-y-2 text-xs text-slate-300 pt-4 border-t border-slate-800">
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-amber-400"></i> OpenAI / Anthropic Integration</li>
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-amber-400"></i> Vector Search & Embeddings</li>
+            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-amber-400"></i> Intelligent Customer Copilots</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="portfolio" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-900">
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <h2 class="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-2">Selected Work</h2>
+        <p class="text-3xl sm:text-4xl font-extrabold text-white">Engineered For Measurable Impact</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Project 1 -->
+        <div class="glass-card rounded-2xl overflow-hidden group">
+          <div class="h-48 bg-gradient-to-tr from-slate-900 via-indigo-950 to-blue-900 p-6 flex flex-col justify-end relative overflow-hidden">
+            <div class="absolute top-4 right-4 text-xs font-mono px-2.5 py-1 rounded bg-black/40 text-cyan-400 border border-cyan-500/30">Next.js + Stripe</div>
+            <i class="fa-solid fa-chart-line text-6xl text-white/10 absolute -bottom-2 -right-2"></i>
+            <h4 class="text-xl font-bold text-white">ApexFin SaaS Platform</h4>
+            <p class="text-xs text-slate-300">Financial analytics dashboard & automated invoicing</p>
+          </div>
+          <div class="p-6">
+            <p class="text-slate-400 text-xs mb-4">Reduced load times from 3.2s to 0.4s and increased conversion checkout flow by 34%.</p>
+            <div class="flex items-center justify-between text-xs text-cyan-400 font-semibold">
+              <span>Full-Stack App</span>
+              <span class="text-slate-400">Delivered in 4 wks</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project 2 -->
+        <div class="glass-card rounded-2xl overflow-hidden group">
+          <div class="h-48 bg-gradient-to-tr from-slate-900 via-emerald-950 to-cyan-950 p-6 flex flex-col justify-end relative overflow-hidden">
+            <div class="absolute top-4 right-4 text-xs font-mono px-2.5 py-1 rounded bg-black/40 text-emerald-400 border border-emerald-500/30">React Native</div>
+            <i class="fa-solid fa-heart-pulse text-6xl text-white/10 absolute -bottom-2 -right-2"></i>
+            <h4 class="text-xl font-bold text-white">Kura Mobile Health</h4>
+            <p class="text-xs text-slate-300">Telemedicine scheduling & encrypted patient records</p>
+          </div>
+          <div class="p-6">
+            <p class="text-slate-400 text-xs mb-4">Dual store launch (iOS & Android) with over 45,000 active monthly consults.</p>
+            <div class="flex items-center justify-between text-xs text-emerald-400 font-semibold">
+              <span>Cross-Platform MVP</span>
+              <span class="text-slate-400">Delivered in 5 wks</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project 3 -->
+        <div class="glass-card rounded-2xl overflow-hidden group">
+          <div class="h-48 bg-gradient-to-tr from-slate-900 via-purple-950 to-pink-950 p-6 flex flex-col justify-end relative overflow-hidden">
+            <div class="absolute top-4 right-4 text-xs font-mono px-2.5 py-1 rounded bg-black/40 text-pink-400 border border-pink-500/30">Shopify + Custom React</div>
+            <i class="fa-solid fa-bag-shopping text-6xl text-white/10 absolute -bottom-2 -right-2"></i>
+            <h4 class="text-xl font-bold text-white">Aura Modern Goods</h4>
+            <p class="text-xs text-slate-300">Luxury e-commerce experience with 3D product previews</p>
+          </div>
+          <div class="p-6">
+            <p class="text-slate-400 text-xs mb-4">Engineered custom checkout gateway integration, yielding $1.4M in first-quarter revenue.</p>
+            <div class="flex items-center justify-between text-xs text-pink-400 font-semibold">
+              <span>E-Commerce Flagship</span>
+              <span class="text-slate-400">Delivered in 3 wks</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <h2 class="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-2">Transparent Pricing</h2>
+        <p class="text-3xl sm:text-5xl font-extrabold text-white">Standardized Packages</p>
+        <p class="text-slate-400 mt-4 text-base">Select your package, review deliverables, and initiate your build immediately with an instant payment order deposit.</p>
+      </div>
+
+      <!-- Pricing Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Package 1: Starter Web -->
+        <div class="glass-card p-6 rounded-2xl flex flex-col justify-between border-slate-800 relative hover:border-slate-600 transition-all">
+          <div>
+            <div class="text-slate-400 font-mono text-xs uppercase tracking-wider mb-2">Package 01</div>
+            <h3 class="text-xl font-bold text-white">Starter Website</h3>
+            <p class="text-slate-400 text-xs mt-2 mb-6">Ideal for landing pages, portfolios, personal brands & lean business launches.</p>
+            
+            <div class="mb-6">
+              <span class="text-4xl font-extrabold text-white font-mono">$499</span>
+              <span class="text-slate-400 text-xs">/ flat one-time</span>
+            </div>
+
+            <ul class="space-y-3 text-xs text-slate-300 mb-8">
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-cyan-400 mt-0.5"></i>
+                <span>High-converting landing page (Up to 3 sections)</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-cyan-400 mt-0.5"></i>
+                <span>Mobile responsive & fast CDN hosting setup</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-cyan-400 mt-0.5"></i>
+                <span>Contact & lead capture form with email alerts</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-cyan-400 mt-0.5"></i>
+                <span>Baseline SEO and OpenGraph social meta tags</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-clock text-slate-400 mt-0.5"></i>
+                <span class="text-slate-400">Delivered in 7-10 business days</span>
+              </li>
+            </ul>
+          </div>
+
+          <button 
+            onclick="openPaymentModal('Starter Website', 499, 'Fast single/multi-section landing page with SEO, responsive styling, and lead capture.')"
+            class="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700 flex items-center justify-center gap-2">
+            <span>Pay & Order Now</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </div>
+
+        <!-- Package 2: Growth Business (POPULAR) -->
+        <div class="glass-card p-6 rounded-2xl flex flex-col justify-between border-cyan-500/50 shadow-xl shadow-cyan-500/10 relative transform lg:-translate-y-2 bg-slate-900/90">
+          <!-- Most Popular Badge -->
+          <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-[11px] uppercase tracking-wider py-1 px-3.5 rounded-full shadow-md">
+            Most Popular
+          </div>
+
+          <div>
+            <div class="text-cyan-400 font-mono text-xs uppercase tracking-wider mb-2">Package 02</div>
+            <h3 class="text-xl font-bold text-white">Growth Business</h3>
+            <p class="text-slate-400 text-xs mt-2 mb-6">Designed for expanding companies needing full CMS, dynamic pages & marketing integrations.</p>
+            
+            <div class="mb-6">
+              <span class="text-4xl font-extrabold text-white font-mono">$1,299</span>
+              <span class="text-slate-400 text-xs">/ flat one-time</span>
+            </div>
+
+            <ul class="space-y-3 text-xs text-slate-300 mb-8">
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-cyan-400 mt-0.5"></i>
+                <span>Up to 7 custom responsive pages (Home, About, Services, Blog, etc.)</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-cyan-400 mt-0.5"></i>
+                <span>Intuitive CMS (Contentful/Sanity) for non-tech editing</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-cyan-400 mt-0.5"></i>
+                <span>Payment gateway integration (Stripe / PayPal checkout)</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-cyan-400 mt-0.5"></i>
+                <span>Comprehensive SEO structure & Google Analytics 4</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-cyan-400 mt-0.5"></i>
+                <span>30-day post-launch technical warranty</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-clock text-slate-400 mt-0.5"></i>
+                <span class="text-slate-400">Delivered in 2-3 weeks</span>
+              </li>
+            </ul>
+          </div>
+
+          <button 
+            onclick="openPaymentModal('Growth Business', 1299, 'Up to 7 dynamic pages, CMS integration, payment gateway, SEO & 30-day warranty.')"
+            class="w-full py-3.5 px-4 rounded-xl gradient-btn text-white font-bold text-sm transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2">
+            <span>Pay & Order Now</span>
+            <i class="fa-solid fa-credit-card text-xs"></i>
+          </button>
+        </div>
+
+        <!-- Package 3: Custom Web App / SaaS -->
+        <div class="glass-card p-6 rounded-2xl flex flex-col justify-between border-slate-800 hover:border-slate-600 transition-all">
+          <div>
+            <div class="text-slate-400 font-mono text-xs uppercase tracking-wider mb-2">Package 03</div>
+            <h3 class="text-xl font-bold text-white">Custom Web App</h3>
+            <p class="text-slate-400 text-xs mt-2 mb-6">Full-scale web applications, SaaS MVPs, customer portals, and internal operations tools.</p>
+            
+            <div class="mb-6">
+              <span class="text-4xl font-extrabold text-white font-mono">$2,999</span>
+              <span class="text-slate-400 text-xs">/ flat one-time</span>
+            </div>
+
+            <ul class="space-y-3 text-xs text-slate-300 mb-8">
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-indigo-400 mt-0.5"></i>
+                <span>Full-stack architecture (React/Next.js + Node/Python)</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-indigo-400 mt-0.5"></i>
+                <span>Secure User Auth (OAuth, JWT, Role-Based Access)</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-indigo-400 mt-0.5"></i>
+                <span>PostgreSQL / MongoDB database integration</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-indigo-400 mt-0.5"></i>
+                <span>Interactive admin dashboard with analytics & reporting</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-indigo-400 mt-0.5"></i>
+                <span>REST / GraphQL API endpoints for external integrations</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-clock text-slate-400 mt-0.5"></i>
+                <span class="text-slate-400">Delivered in 4-5 weeks</span>
+              </li>
+            </ul>
+          </div>
+
+          <button 
+            onclick="openPaymentModal('Custom Web App / SaaS', 2999, 'Full-stack application, Auth, Database, Admin Dashboard, and API integrations.')"
+            class="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700 flex items-center justify-center gap-2">
+            <span>Pay & Order Now</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </div>
+
+        <!-- Package 4: Mobile App MVP -->
+        <div class="glass-card p-6 rounded-2xl flex flex-col justify-between border-slate-800 hover:border-slate-600 transition-all">
+          <div>
+            <div class="text-slate-400 font-mono text-xs uppercase tracking-wider mb-2">Package 04</div>
+            <h3 class="text-xl font-bold text-white">Mobile App MVP</h3>
+            <p class="text-slate-400 text-xs mt-2 mb-6">Cross-platform iOS and Android mobile app tailored for startups and digital businesses.</p>
+            
+            <div class="mb-6">
+              <span class="text-4xl font-extrabold text-white font-mono">$3,899</span>
+              <span class="text-slate-400 text-xs">/ flat one-time</span>
+            </div>
+
+            <ul class="space-y-3 text-xs text-slate-300 mb-8">
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-sky-400 mt-0.5"></i>
+                <span>Cross-platform iOS & Android code (React Native/Flutter)</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-sky-400 mt-0.5"></i>
+                <span>Push notifications & background sync setup</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-sky-400 mt-0.5"></i>
+                <span>Native hardware features (Camera, Geolocation, Storage)</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-sky-400 mt-0.5"></i>
+                <span>Apple App Store & Google Play Store submission aid</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-check text-sky-400 mt-0.5"></i>
+                <span>Dedicated backend and real-time database</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-clock text-slate-400 mt-0.5"></i>
+                <span class="text-slate-400">Delivered in 5-6 weeks</span>
+              </li>
+            </ul>
+          </div>
+
+          <button 
+            onclick="openPaymentModal('Mobile App MVP', 3899, 'Cross-platform iOS/Android app, push notifications, store submission, and cloud backend.')"
+            class="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700 flex items-center justify-center gap-2">
+            <span>Pay & Order Now</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="calculator" class="py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+      <div class="glass-card p-8 sm:p-12 rounded-3xl border border-slate-800 relative overflow-hidden">
+        <div class="absolute -right-20 -top-20 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-2xl mb-10">
+          <span class="text-xs font-bold uppercase tracking-widest text-cyan-400 font-mono">Interactive Estimator</span>
+          <h2 class="text-2xl sm:text-4xl font-extrabold text-white mt-1">Configure Your Custom Project</h2>
+          <p class="text-slate-400 text-sm mt-2">Adjust requirements to generate an instant estimate. Once satisfied, initiate payment for your exact build.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <!-- Left configuration options -->
+          <div class="lg:col-span-2 space-y-6">
+            <!-- Platform selection -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">Project Type</label>
+              <div class="grid grid-cols-3 gap-3">
+                <button type="button" class="calc-type-btn active py-3 px-3 rounded-xl border text-center text-xs font-semibold transition-all border-cyan-500 bg-cyan-950/40 text-cyan-300" data-value="web" data-base="450">
+                  <i class="fa-solid fa-globe block text-base mb-1"></i> Web Platform
+                </button>
+                <button type="button" class="calc-type-btn py-3 px-3 rounded-xl border text-center text-xs font-semibold transition-all border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700" data-value="mobile" data-base="2200">
+                  <i class="fa-solid fa-mobile-screen block text-base mb-1"></i> Mobile App
+                </button>
+                <button type="button" class="calc-type-btn py-3 px-3 rounded-xl border text-center text-xs font-semibold transition-all border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700" data-value="hybrid" data-base="3200">
+                  <i class="fa-solid fa-laptop-code block text-base mb-1"></i> Web + Mobile
+                </button>
+              </div>
+            </div>
+
+            <!-- Page / Screen Count Slider -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Number of Pages / Screens</label>
+                <span id="pageCountDisplay" class="text-sm font-mono font-bold text-cyan-400">5 Pages</span>
+              </div>
+              <input type="range" id="pageRange" min="1" max="25" value="5" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+              <div class="flex justify-between text-[11px] text-slate-500 mt-1 font-mono">
+                <span>1 Page (Landing)</span>
+                <span>12 Pages</span>
+                <span>25+ Pages</span>
+              </div>
+            </div>
+
+            <!-- Add-on Feature Checkboxes -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">Target Capabilities & Modules</label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="flex items-center gap-3 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 cursor-pointer text-xs">
+                  <input type="checkbox" class="calc-addon rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0" data-cost="450" id="optCms">
+                  <span class="text-slate-300">Content Management (CMS)</span>
+                </label>
+                <label class="flex items-center gap-3 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 cursor-pointer text-xs">
+                  <input type="checkbox" class="calc-addon rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0" data-cost="550" id="optEcom">
+                  <span class="text-slate-300">Payment Gateway / E-Comm</span>
+                </label>
+                <label class="flex items-center gap-3 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 cursor-pointer text-xs">
+                  <input type="checkbox" class="calc-addon rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0" data-cost="600" id="optAuth">
+                  <span class="text-slate-300">User Authentication & Portal</span>
+                </label>
+                <label class="flex items-center gap-3 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 cursor-pointer text-xs">
+                  <input type="checkbox" class="calc-addon rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0" data-cost="850" id="optAi">
+                  <span class="text-slate-300">AI Assistant / Automation</span>
+                </label>
+                <label class="flex items-center gap-3 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 cursor-pointer text-xs">
+                  <input type="checkbox" class="calc-addon rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0" data-cost="350" id="optSeo">
+                  <span class="text-slate-300">Advanced SEO & Speed Engine</span>
+                </label>
+                <label class="flex items-center gap-3 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 cursor-pointer text-xs">
+                  <input type="checkbox" class="calc-addon rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0" data-cost="400" id="optRush">
+                  <span class="text-amber-400 font-semibold">Priority Expedited Delivery</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Estimate Summary Card -->
+          <div class="glass-card p-6 rounded-2xl flex flex-col justify-between border-cyan-500/30 bg-slate-900/90">
+            <div>
+              <div class="text-xs uppercase font-mono tracking-wider text-slate-400 mb-1">Estimated Total</div>
+              <div class="flex items-baseline gap-2 mb-4">
+                <span id="calculatedPrice" class="text-4xl sm:text-5xl font-extrabold text-white font-mono">$850</span>
+                <span class="text-xs text-slate-400">USD</span>
+              </div>
+
+              <div class="border-t border-slate-800 pt-4 space-y-2 text-xs">
+                <div class="flex justify-between text-slate-400">
+                  <span>Base Architecture:</span>
+                  <span id="calcBaseLabel" class="text-slate-200 font-mono">$450</span>
+                </div>
+                <div class="flex justify-between text-slate-400">
+                  <span>Screen Multiplier:</span>
+                  <span id="calcScreensLabel" class="text-slate-200 font-mono">$400</span>
+                </div>
+                <div class="flex justify-between text-slate-400">
+                  <span>Selected Add-ons:</span>
+                  <span id="calcAddonsLabel" class="text-slate-200 font-mono">$0</span>
+                </div>
+                <div class="flex justify-between text-cyan-400 pt-2 border-t border-slate-800">
+                  <span>Estimated Timeframe:</span>
+                  <span id="calcDeliveryTime" class="font-bold">2 - 3 Weeks</span>
+                </div>
+              </div>
+
+              <div class="mt-6 p-3 rounded-lg bg-cyan-950/30 border border-cyan-500/20 text-[11px] text-cyan-300">
+                <i class="fa-solid fa-shield-halved mr-1"></i> Includes source code copyright, 100% intellectual property transfer, and QA testing.
+              </div>
+            </div>
+
+            <button 
+              id="calcCheckoutBtn"
+              class="w-full mt-6 py-3.5 px-4 gradient-btn text-white font-bold text-sm rounded-xl shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2">
+              <span>Order Custom Build</span>
+              <i class="fa-solid fa-credit-card text-xs"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <h2 class="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-2">Testimonials</h2>
+        <p class="text-3xl font-extrabold text-white">Trusted by Tech Founders & Enterprise Brands</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass-card p-6 rounded-2xl border-slate-800">
+          <div class="flex text-amber-400 text-xs gap-1 mb-4">
+            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+          </div>
+          <p class="text-slate-300 text-sm leading-relaxed mb-6">
+            "Emerson Software Services built our multi-tenant SaaS dashboard ahead of schedule. Their attention to detail on the Stripe billing pipeline saved us weeks of headache."
+          </p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-sm">
+              ML
+            </div>
+            <div>
+              <div class="text-white text-sm font-bold">Marcus Levine</div>
+              <div class="text-xs text-slate-500">CTO, HyperMetrics</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl border-slate-800">
+          <div class="flex text-amber-400 text-xs gap-1 mb-4">
+            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+          </div>
+          <p class="text-slate-300 text-sm leading-relaxed mb-6">
+            "We ordered the Growth Business package ($1,299). The conversion rate on our newly launched platform jumped 42% in month one. The clean code made SEO instant."
+          </p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">
+              ER
+            </div>
+            <div>
+              <div class="text-white text-sm font-bold">Elena Rostova</div>
+              <div class="text-xs text-slate-500">Founder, Solis Health</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl border-slate-800">
+          <div class="flex text-amber-400 text-xs gap-1 mb-4">
+            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+          </div>
+          <p class="text-slate-300 text-sm leading-relaxed mb-6">
+            "Their team submitted our React Native mobile application to both Apple & Google app stores without a single rejection. Outstanding engineering caliber."
+          </p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
+              DK
+            </div>
+            <div>
+              <div class="text-white text-sm font-bold">David King</div>
+              <div class="text-xs text-slate-500">VP Product, Veloce Logistics</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="py-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <h2 class="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-2">Clear Answers</h2>
+        <p class="text-3xl font-extrabold text-white">Frequently Asked Questions</p>
+      </div>
+
+      <div class="space-y-4">
+        <!-- FAQ 1 -->
+        <div class="glass-card rounded-xl border border-slate-800 overflow-hidden">
+          <button class="faq-toggle w-full p-5 text-left flex justify-between items-center text-white font-semibold text-sm hover:text-cyan-400 transition-colors">
+            <span>What happens immediately after I click "Pay & Order Now"?</span>
+            <i class="fa-solid fa-chevron-down text-slate-500 text-xs transition-transform duration-300"></i>
+          </button>
+          <div class="faq-content hidden px-5 pb-5 text-xs text-slate-400 leading-relaxed border-t border-slate-800/60 pt-3">
+            After completing your simulated payment or package deposit, you receive an instantaneous project receipt with an assigned Project Order ID. Within 4 hours, our Senior Solutions Architect emails you a private onboarding link with access to your dedicated Slack channel, Notion workspace, and GitHub repository.
+          </div>
+        </div>
+
+        <!-- FAQ 2 -->
+        <div class="glass-card rounded-xl border border-slate-800 overflow-hidden">
+          <button class="faq-toggle w-full p-5 text-left flex justify-between items-center text-white font-semibold text-sm hover:text-cyan-400 transition-colors">
+            <span>Do I own 100% of the code and intellectual property?</span>
+            <i class="fa-solid fa-chevron-down text-slate-500 text-xs transition-transform duration-300"></i>
+          </button>
+          <div class="faq-content hidden px-5 pb-5 text-xs text-slate-400 leading-relaxed border-t border-slate-800/60 pt-3">
+            Yes. Absolutely. Emerson Software Services signs full IP and copyright transfer agreements upon project kickoff. All code, design assets, Figma files, and server configurations belong strictly to you.
+          </div>
+        </div>
+
+        <!-- FAQ 3 -->
+        <div class="glass-card rounded-xl border border-slate-800 overflow-hidden">
+          <button class="faq-toggle w-full p-5 text-left flex justify-between items-center text-white font-semibold text-sm hover:text-cyan-400 transition-colors">
+            <span>Can I customize features after ordering a standard package?</span>
+            <i class="fa-solid fa-chevron-down text-slate-500 text-xs transition-transform duration-300"></i>
+          </button>
+          <div class="faq-content hidden px-5 pb-5 text-xs text-slate-400 leading-relaxed border-t border-slate-800/60 pt-3">
+            Yes. During your initial discovery sprint, you can adjust scopes. If you need additional modules (such as AI bots or extra database models), we add them transparently via our standardized add-on rate card.
+          </div>
+        </div>
+
+        <!-- FAQ 4 -->
+        <div class="glass-card rounded-xl border border-slate-800 overflow-hidden">
+          <button class="faq-toggle w-full p-5 text-left flex justify-between items-center text-white font-semibold text-sm hover:text-cyan-400 transition-colors">
+            <span>What payment methods are supported?</span>
+            <i class="fa-solid fa-chevron-down text-slate-500 text-xs transition-transform duration-300"></i>
+          </button>
+          <div class="faq-content hidden px-5 pb-5 text-xs text-slate-400 leading-relaxed border-t border-slate-800/60 pt-3">
+            We accept all major Credit/Debit Cards (Visa, Mastercard, Amex via Stripe), PayPal, Bank Wire transfers (ACH/SEPA), and major Cryptocurrencies (USDC, USDT, BTC, ETH) with zero surcharge.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+      <div class="glass-card p-8 sm:p-12 rounded-3xl border border-slate-800">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-widest text-cyan-400 font-mono">Direct Communication</span>
+            <h2 class="text-3xl font-extrabold text-white mt-2 mb-4">Have an Enterprise or Custom Request?</h2>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">
+              Need a custom statement of work (SOW), NDA execution, or multi-phase enterprise rollout? Speak directly with Emerson's engineering lead.
+            </p>
+
+            <div class="space-y-4 text-xs">
+              <div class="flex items-center gap-3 text-slate-300">
+                <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-cyan-400">
+                  <i class="fa-solid fa-envelope"></i>
+                </div>
+                <span>contact@emersonsoftware.io</span>
+              </div>
+              <div class="flex items-center gap-3 text-slate-300">
+                <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-cyan-400">
+                  <i class="fa-solid fa-shield"></i>
+                </div>
+                <span>Strict Mutual NDA Executed Prior to Code Review</span>
+              </div>
+              <div class="flex items-center gap-3 text-slate-300">
+                <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-cyan-400">
+                  <i class="fa-solid fa-headset"></i>
+                </div>
+                <span>24/7 SLA Engineering Support Available</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Form -->
+          <form id="contactForm" class="space-y-4" onsubmit="handleContactSubmit(event)">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Your Name</label>
+              <input type="text" required placeholder="Alexander Vance" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Email Address</label>
+              <input type="email" required placeholder="alex@company.com" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Project Summary & Budget</label>
+              <textarea rows="3" required placeholder="Briefly describe what you are looking to build..." class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"></textarea>
+            </div>
+
+            <button type="submit" class="w-full py-3.5 px-4 gradient-btn text-white font-bold text-sm rounded-xl shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2">
+              <span id="contactBtnText">Send Direct Inquiry</span>
+              <i class="fa-solid fa-paper-plane text-xs"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-900 bg-slate-950/80 py-12 px-4 sm:px-6 lg:px-8 relative z-10 text-xs">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white font-mono font-bold text-sm">
+          E
+        </div>
+        <div>
+          <span class="font-bold text-white font-mono tracking-wider">EMERSON SOFTWARE SERVICES</span>
+          <p class="text-slate-500 text-[11px]">Precision Software Engineering & App Development</p>
+        </div>
+      </div>
+
+      <div class="flex gap-6 text-slate-400">
+        <a href="#services" class="hover:text-cyan-400">Services</a>
+        <a href="#pricing" class="hover:text-cyan-400">Pricing</a>
+        <a href="#calculator" class="hover:text-cyan-400">Estimator</a>
+        <a href="#contact" class="hover:text-cyan-400">Contact</a>
+      </div>
+
+      <div class="text-slate-500 text-[11px]">
+        &copy; <span id="currentYear"></span> Emerson Software Services. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <div id="paymentModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+    <div class="relative w-full max-w-lg glass-card rounded-2xl border border-slate-700/80 shadow-2xl p-6 sm:p-8 my-8 transition-all scale-95 opacity-0" id="modalCard">
+      
+      <!-- Close button -->
+      <button onclick="closePaymentModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800/80 transition-colors">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+
+      <!-- Step 1: Payment Checkout Form -->
+      <div id="checkoutStep1">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white">Secure Checkout</h3>
+            <p class="text-xs text-slate-400">Emerson Software Services • Instant Project Kickoff</p>
+          </div>
+        </div>
+
+        <!-- Selected Package Summary Box -->
+        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 mb-6">
+          <div class="flex justify-between items-start mb-1">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Package Selected:</span>
+            <span id="modalPkgPrice" class="text-xl font-bold font-mono text-cyan-400">$1,299</span>
+          </div>
+          <h4 id="modalPkgName" class="text-base font-bold text-white mb-1">Growth Business</h4>
+          <p id="modalPkgDesc" class="text-xs text-slate-400 leading-snug">Multi-page website with CMS and payment integration.</p>
+        </div>
+
+        <!-- Payment Method Tabs -->
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Payment Method</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" onclick="selectPayTab('card')" id="payTab-card" class="pay-method-btn active py-2.5 px-3 rounded-lg border text-center text-xs font-semibold border-cyan-500 bg-cyan-950/40 text-cyan-300 flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-credit-card"></i> Card
+            </button>
+            <button type="button" onclick="selectPayTab('paypal')" id="payTab-paypal" class="pay-method-btn py-2.5 px-3 rounded-lg border text-center text-xs font-semibold border-slate-800 bg-slate-900 text-slate-400 flex items-center justify-center gap-1.5">
+              <i class="fa-brands fa-paypal"></i> PayPal
+            </button>
+            <button type="button" onclick="selectPayTab('crypto')" id="payTab-crypto" class="pay-method-btn py-2.5 px-3 rounded-lg border text-center text-xs font-semibold border-slate-800 bg-slate-900 text-slate-400 flex items-center justify-center gap-1.5">
+              <i class="fa-brands fa-bitcoin"></i> Crypto
+            </button>
+          </div>
+        </div>
+
+        <!-- Payment Form -->
+        <form id="paymentForm" onsubmit="handlePaymentSubmit(event)" class="space-y-4">
+          <!-- Client Details -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1">Full Name</label>
+              <input type="text" id="payClientName" required placeholder="Jane Doe" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1">Work Email</label>
+              <input type="email" id="payClientEmail" required placeholder="jane@company.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+            </div>
+          </div>
+
+          <!-- Card Details Container -->
+          <div id="cardDetailsContainer" class="space-y-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1">Card Number</label>
+              <div class="relative">
+                <input type="text" id="payCardNum" required maxlength="19" placeholder="4242 •••• •••• 4242" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-3 pr-10 py-2 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+                <i class="fa-regular fa-credit-card absolute right-3 top-2.5 text-slate-500 text-xs"></i>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Exp Date</label>
+                <input type="text" id="payCardExp" required maxlength="5" placeholder="MM/YY" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">CVC / CVV</label>
+                <input type="password" id="payCardCvc" required maxlength="4" placeholder="123" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+              </div>
+            </div>
+          </div>
+
+          <!-- PayPal info (conditionally shown) -->
+          <div id="paypalDetailsContainer" class="hidden p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 space-y-2">
+            <p>You will authorize payment via PayPal Express for the total project amount.</p>
+            <span class="inline-block px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded font-semibold text-[11px]">
+              <i class="fa-brands fa-paypal mr-1"></i> PayPal Express Ready
+            </span>
+          </div>
+
+          <!-- Crypto info (conditionally shown) -->
+          <div id="cryptoDetailsContainer" class="hidden p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 space-y-2">
+            <p class="text-slate-400">Instant multi-chain settlement available in USDC (Ethereum, Polygon, Solana, Arbitrum).</p>
+            <div class="font-mono text-[10px] bg-black/60 p-2.5 rounded border border-slate-700 select-all text-cyan-400 break-all">
+              0x89205A3A3b2A55384eE2875b28753ec9103C6B5F
+            </div>
+          </div>
+
+          <div class="text-[11px] text-slate-400 flex items-center gap-1.5 pt-1">
+            <i class="fa-solid fa-lock text-emerald-400"></i>
+            <span>Encrypted with 256-bit TLS bank grade security.</span>
+          </div>
+
+          <button type="submit" id="paySubmitBtn" class="w-full py-3.5 px-4 gradient-btn text-white font-bold text-sm rounded-xl shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 mt-4">
+            <span id="payBtnLabel">Authorize & Pay Now</span>
+            <i class="fa-solid fa-check-circle text-xs"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Step 2: Payment Receipt / Confirmation Screen -->
+      <div id="checkoutStep2" class="hidden text-center py-4">
+        <div class="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 mx-auto flex items-center justify-center text-3xl mb-4">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <h3 class="text-2xl font-extrabold text-white mb-1">Payment Authorized!</h3>
+        <p class="text-xs text-slate-400 mb-6">Welcome to Emerson Software Services. Your order is officially confirmed.</p>
+
+        <div class="glass-card p-5 rounded-xl border border-slate-800 text-left mb-6 space-y-3 font-mono text-xs">
+          <div class="flex justify-between border-b border-slate-800 pb-2">
+            <span class="text-slate-400">Order ID:</span>
+            <span id="receiptOrderId" class="text-cyan-400 font-bold">EMS-92847</span>
+          </div>
+          <div class="flex justify-between border-b border-slate-800 pb-2">
+            <span class="text-slate-400">Client:</span>
+            <span id="receiptClientName" class="text-slate-200">Jane Doe</span>
+          </div>
+          <div class="flex justify-between border-b border-slate-800 pb-2">
+            <span class="text-slate-400">Package:</span>
+            <span id="receiptPkgName" class="text-slate-200">Growth Business</span>
+          </div>
+          <div class="flex justify-between border-b border-slate-800 pb-2">
+            <span class="text-slate-400">Amount Charged:</span>
+            <span id="receiptAmount" class="text-emerald-400 font-bold">$1,299 USD</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">Status:</span>
+            <span class="text-emerald-400 font-bold">Paid & Provisioned</span>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-400 mb-6">
+          A receipt and project onboarding pack has been dispatched to <span id="receiptEmail" class="text-white font-semibold"></span>.
+        </p>
+
+        <button onclick="closePaymentModal()" class="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-xs transition-colors">
+          Return to Dashboard
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="notificationToast" class="fixed bottom-6 right-6 z-50 max-w-sm w-full glass-card p-4 rounded-xl border border-cyan-500/40 shadow-2xl flex items-center gap-3 transform translate-y-24 opacity-0 pointer-events-none">
+    <div id="toastIcon" class="w-9 h-9 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-sm font-bold flex-shrink-0">
+      <i class="fa-solid fa-bell"></i>
+    </div>
+    <div class="flex-1 text-xs">
+      <div id="toastTitle" class="font-bold text-white">Notice</div>
+      <div id="toastMsg" class="text-slate-400">Action performed successfully.</div>
+    </div>
+    <button onclick="hideToast()" class="text-slate-400 hover:text-white p-1">
+      <i class="fa-solid fa-xmark text-xs"></i>
+    </button>
+  </div>
+
+  <script>
+    // State management
+    const appState = {
+      calculator: {
+        type: 'web',
+        basePrice: 450,
+        pages: 5,
+        addonsTotal: 0
+      },
+      currentCheckout: {
+        name: 'Growth Business',
+        price: 1299,
+        description: 'Multi-page website with CMS and payment integration.',
+        method: 'card'
+      }
+    };
+
+    // Initialize DOM handlers on load
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('currentYear').textContent = new Date().getFullYear();
+      initMobileNav();
+      initFaqAccordion();
+      initCalculator();
+      formatCardInputs();
+    });
+
+    let toastTimeout;
+    function showToast(title, message, iconClass = 'fa-solid fa-check', isSuccess = true) {
+      const toast = document.getElementById('notificationToast');
+      const toastTitle = document.getElementById('toastTitle');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastTitle.textContent = title;
+      toastMsg.textContent = message;
+      toastIcon.innerHTML = `<i class="${iconClass}"></i>`;
+
+      if (isSuccess) {
+        toastIcon.className = 'w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-bold flex-shrink-0';
+      } else {
+        toastIcon.className = 'w-9 h-9 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-sm font-bold flex-shrink-0';
+      }
+
+      toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        hideToast();
+      }, 5000);
+    }
+
+    function hideToast() {
+      const toast = document.getElementById('notificationToast');
+      toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }
+
+    function initMobileNav() {
+      const btn = document.getElementById('mobileMenuBtn');
+      const menu = document.getElementById('mobileMenu');
+      const icon = document.getElementById('menuIcon');
+
+      btn.addEventListener('click', () => {
+        const isHidden = menu.classList.contains('hidden');
+        if (isHidden) {
+          menu.classList.remove('hidden');
+          icon.classList.remove('fa-bars');
+          icon.classList.add('fa-xmark');
+        } else {
+          menu.classList.add('hidden');
+          icon.classList.add('fa-bars');
+          icon.classList.remove('fa-xmark');
+        }
+      });
+
+      document.querySelectorAll('.mobile-nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+          menu.classList.add('hidden');
+          icon.classList.add('fa-bars');
+          icon.classList.remove('fa-xmark');
+        });
+      });
+    }
+
+    function initFaqAccordion() {
+      const toggles = document.querySelectorAll('.faq-toggle');
+      toggles.forEach(toggle => {
+        toggle.addEventListener('click', () => {
+          const content = toggle.nextElementSibling;
+          const chevron = toggle.querySelector('.fa-chevron-down');
+          const isHidden = content.classList.contains('hidden');
+
+          // Close other open accordions
+          toggles.forEach(otherToggle => {
+            if (otherToggle !== toggle) {
+              otherToggle.nextElementSibling.classList.add('hidden');
+              otherToggle.querySelector('.fa-chevron-down').style.transform = 'rotate(0deg)';
+            }
+          });
+
+          if (isHidden) {
+            content.classList.remove('hidden');
+            chevron.style.transform = 'rotate(180deg)';
+          } else {
+            content.classList.add('hidden');
+            chevron.style.transform = 'rotate(0deg)';
+          }
+        });
+      });
+    }
+
+    function initCalculator() {
+      const typeBtns = document.querySelectorAll('.calc-type-btn');
+      const pageSlider = document.getElementById('pageRange');
+      const pageDisplay = document.getElementById('pageCountDisplay');
+      const addonCheckboxes = document.querySelectorAll('.calc-addon');
+      const checkoutBtn = document.getElementById('calcCheckoutBtn');
+
+      // Platform selection click
+      typeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          typeBtns.forEach(b => {
+            b.classList.remove('active', 'border-cyan-500', 'bg-cyan-950/40', 'text-cyan-300');
+            b.classList.add('border-slate-800', 'bg-slate-900/60', 'text-slate-400');
+          });
+
+          btn.classList.add('active', 'border-cyan-500', 'bg-cyan-950/40', 'text-cyan-300');
+          btn.classList.remove('border-slate-800', 'bg-slate-900/60', 'text-slate-400');
+
+          appState.calculator.type = btn.dataset.value;
+          appState.calculator.basePrice = parseInt(btn.dataset.base, 10);
+          updateCalculator();
+        });
+      });
+
+      // Page count slider change
+      pageSlider.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value, 10);
+        appState.calculator.pages = val;
+        pageDisplay.textContent = `${val} ${val === 1 ? 'Page' : 'Pages / Screens'}`;
+        updateCalculator();
+      });
+
+      // Addons checkbox changes
+      addonCheckboxes.forEach(chk => {
+        chk.addEventListener('change', () => {
+          updateCalculator();
+        });
+      });
+
+      // Trigger checkout from custom calculator
+      checkoutBtn.addEventListener('click', () => {
+        const finalPrice = calculateTotalSum();
+        const typeLabel = appState.calculator.type === 'web' ? 'Custom Web Platform' : (appState.calculator.type === 'mobile' ? 'Mobile App Custom Build' : 'Web + Mobile Full Ecosystem');
+        const desc = `Custom scoped build: ${appState.calculator.pages} pages with specified feature modules.`;
+        openPaymentModal(typeLabel, finalPrice, desc);
+      });
+
+      updateCalculator();
+    }
+
+    function calculateTotalSum() {
+      const base = appState.calculator.basePrice;
+      const pages = appState.calculator.pages;
+      
+      // Cost per page above 1
+      let perPageCost = 80;
+      if (appState.calculator.type === 'mobile') perPageCost = 150;
+      if (appState.calculator.type === 'hybrid') perPageCost = 210;
+
+      const screenMultiplier = (pages - 1) * perPageCost;
+
+      let addons = 0;
+      document.querySelectorAll('.calc-addon:checked').forEach(ch => {
+        addons += parseInt(ch.dataset.cost, 10);
+      });
+
+      return base + screenMultiplier + addons;
+    }
+
+    function updateCalculator() {
+      const base = appState.calculator.basePrice;
+      const pages = appState.calculator.pages;
+      let perPageCost = 80;
+      if (appState.calculator.type === 'mobile') perPageCost = 150;
+      if (appState.calculator.type === 'hybrid') perPageCost = 210;
+      
+      const screenMultiplier = (pages - 1) * perPageCost;
+      let addons = 0;
+      document.querySelectorAll('.calc-addon:checked').forEach(ch => {
+        addons += parseInt(ch.dataset.cost, 10);
+      });
+
+      const total = base + screenMultiplier + addons;
+
+      // Update UI elements
+      document.getElementById('calculatedPrice').textContent = `$${total.toLocaleString()}`;
+      document.getElementById('calcBaseLabel').textContent = `$${base.toLocaleString()}`;
+      document.getElementById('calcScreensLabel').textContent = `$${screenMultiplier.toLocaleString()}`;
+      document.getElementById('calcAddonsLabel').textContent = `$${addons.toLocaleString()}`;
+
+      // Timeframe logic
+      let weeks = '2 - 3 Weeks';
+      if (total > 2500 && total <= 5000) weeks = '3 - 5 Weeks';
+      if (total > 5000) weeks = '6 - 8 Weeks';
+      if (document.getElementById('optRush').checked) {
+        weeks = 'Expedited (1 - 2 Weeks)';
+      }
+      document.getElementById('calcDeliveryTime').textContent = weeks;
+    }
+
+    function openPaymentModal(pkgName, pkgPrice, pkgDesc) {
+      appState.currentCheckout.name = pkgName;
+      appState.currentCheckout.price = pkgPrice;
+      appState.currentCheckout.description = pkgDesc;
+
+      document.getElementById('modalPkgName').textContent = pkgName;
+      document.getElementById('modalPkgPrice').textContent = `$${pkgPrice.toLocaleString()}`;
+      document.getElementById('modalPkgDesc').textContent = pkgDesc;
+      document.getElementById('payBtnLabel').textContent = `Authorize & Pay $${pkgPrice.toLocaleString()}`;
+
+      // Reset to step 1
+      document.getElementById('checkoutStep1').classList.remove('hidden');
+      document.getElementById('checkoutStep2').classList.add('hidden');
+
+      const modal = document.getElementById('paymentModal');
+      const card = document.getElementById('modalCard');
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        card.classList.remove('scale-95', 'opacity-0');
+        card.classList.add('scale-100', 'opacity-100');
+      }, 10);
+    }
+
+    function closePaymentModal() {
+      const modal = document.getElementById('paymentModal');
+      const card = document.getElementById('modalCard');
+
+      card.classList.remove('scale-100', 'opacity-100');
+      card.classList.add('scale-95', 'opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 200);
+    }
+
+    function selectPayTab(method) {
+      appState.currentCheckout.method = method;
+      const tabs = ['card', 'paypal', 'crypto'];
+
+      tabs.forEach(t => {
+        const btn = document.getElementById(`payTab-${t}`);
+        if (t === method) {
+          btn.classList.add('border-cyan-500', 'bg-cyan-950/40', 'text-cyan-300');
+          btn.classList.remove('border-slate-800', 'bg-slate-900', 'text-slate-400');
+        } else {
+          btn.classList.remove('border-cyan-500', 'bg-cyan-950/40', 'text-cyan-300');
+          btn.classList.add('border-slate-800', 'bg-slate-900', 'text-slate-400');
+        }
+      });
+
+      // Toggle form views
+      document.getElementById('cardDetailsContainer').classList.toggle('hidden', method !== 'card');
+      document.getElementById('paypalDetailsContainer').classList.toggle('hidden', method !== 'paypal');
+      document.getElementById('cryptoDetailsContainer').classList.toggle('hidden', method !== 'crypto');
+
+      // Adjust input required status
+      const cardNum = document.getElementById('payCardNum');
+      const cardExp = document.getElementById('payCardExp');
+      const cardCvc = document.getElementById('payCardCvc');
+      if (method === 'card') {
+        cardNum.setAttribute('required', 'true');
+        cardExp.setAttribute('required', 'true');
+        cardCvc.setAttribute('required', 'true');
+      } else {
+        cardNum.removeAttribute('required');
+        cardExp.removeAttribute('required');
+        cardCvc.removeAttribute('required');
+      }
+    }
+
+    // Input masking for credit card entry
+    function formatCardInputs() {
+      const cardNum = document.getElementById('payCardNum');
+      const cardExp = document.getElementById('payCardExp');
+
+      if (cardNum) {
+        cardNum.addEventListener('input', (e) => {
+          let val = e.target.value.replace(/\D/g, '');
+          val = val.substring(0, 16);
+          const parts = [];
+          for (let i = 0; i < val.length; i += 4) {
+            parts.push(val.substring(i, i + 4));
+          }
+          e.target.value = parts.join(' ');
+        });
+      }
+
+      if (cardExp) {
+        cardExp.addEventListener('input', (e) => {
+          let val = e.target.value.replace(/\D/g, '');
+          if (val.length >= 2) {
+            e.target.value = val.substring(0, 2) + '/' + val.substring(2, 4);
+          } else {
+            e.target.value = val;
+          }
+        });
+      }
+    }
+
+    function handlePaymentSubmit(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('paySubmitBtn');
+      const originalHtml = submitBtn.innerHTML;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Authorizing Gateway...`;
+
+      setTimeout(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalHtml;
+
+        const clientName = document.getElementById('payClientName').value || 'Valued Client';
+        const clientEmail = document.getElementById('payClientEmail').value || 'client@domain.com';
+        const orderId = 'EMS-' + Math.floor(10000 + Math.random() * 90000);
+
+        // Populate receipt
+        document.getElementById('receiptOrderId').textContent = orderId;
+        document.getElementById('receiptClientName').textContent = clientName;
+        document.getElementById('receiptPkgName').textContent = appState.currentCheckout.name;
+        document.getElementById('receiptAmount').textContent = `$${appState.currentCheckout.price.toLocaleString()} USD`;
+        document.getElementById('receiptEmail').textContent = clientEmail;
+
+        // Transition views
+        document.getElementById('checkoutStep1').classList.add('hidden');
+        document.getElementById('checkoutStep2').classList.remove('hidden');
+
+        showToast(
+          'Payment Successful',
+          `Order ${orderId} initialized. Onboarding details dispatched to ${clientEmail}.`,
+          'fa-solid fa-check',
+          true
+        );
+      }, 1200);
+    }
+
+    // Contact form submission handler
+    function handleContactSubmit(e) {
+      e.preventDefault();
+      const btnText = document.getElementById('contactBtnText');
+      const originalText = btnText.textContent;
+
+      btnText.textContent = 'Transmitting Message...';
+
+      setTimeout(() => {
+        btnText.textContent = originalText;
+        document.getElementById('contactForm').reset();
+        showToast(
+          'Inquiry Received',
+          'Thank you. An Emerson software architect will review your project within 2 business hours.',
+          'fa-solid fa-paper-plane',
+          true
+        );
+      }, 900);
+    }
+  </script>
+</body>
+</html>
