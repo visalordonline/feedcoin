@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>FeedCoin || Identity Verification (KYC)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    .step-indicator {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .step-indicator::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--card-border);
+      z-index: 1;
+      transform: translateY(-50%);
+    }
+    .step-bubble {
+      position: relative;
+      z-index: 2;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--input-bg);
+      border: 2px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+    }
+    .step-bubble.active {
+      border-color: #6c5ce7;
+      background: var(--primary-gradient);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(108, 92, 231, 0.4);
+    }
+    .step-bubble.completed {
+      border-color: var(--accent-emerald);
+      background: var(--accent-emerald);
+      color: #fff;
+    }
+    .camera-frame {
+      position: relative;
+      width: 100%;
+      max-width: 320px;
+      height: 320px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px dashed #6c5ce7;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #cameraVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    .scan-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 12px var(--accent-emerald);
+      animation: scanAnim 2s infinite ease-in-out;
+      display: none;
+    }
+    @keyframes scanAnim {
+      0% { top: 0%; opacity: 0.8; }
+      50% { top: 95%; opacity: 1; }
+      100% { top: 0%; opacity: 0.8; }
+    }
+    .doc-picker {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .doc-btn {
+      padding: 12px 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .doc-btn.selected {
+      border-color: #6c5ce7;
+      background: rgba(108, 92, 231, 0.2);
+      color: #fff;
+    }
+  </style>
+</head>
+<body class="dash-body">
+
+  <div class="blob blob-purple"></div>
+  <div class="blob blob-blue"></div>
+
+  <div class="dash-main" style="max-width: 520px; margin: 30px auto; padding: 16px;">
+    <div class="glass-card section-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h2>ID Verification</h2>
+          <p class="muted">Complete KYC to unlock full withdrawals & security.</p>
+        </div>
+        <a href="dashboard.html" class="btn btn-ghost btn-sm">Skip</a>
+      </div>
+
+      <!-- Step Indicators -->
+      <div class="step-indicator" style="margin-top:20px;">
+        <div class="step-bubble active" id="badge1">1</div>
+        <div class="step-bubble" id="badge2">2</div>
+        <div class="step-bubble" id="badge3">3</div>
+      </div>
+
+      <!-- ================= STEP 1: ID SELECTION ================= -->
+      <div id="step1Box">
+        <h3 style="margin-bottom:8px;">Step 1: Government ID</h3>
+        <p class="muted" style="margin-bottom:14px;">Select your official document type and input its valid number.</p>
+
+        <label class="muted" style="font-size:0.8rem; display:block; margin-bottom:6px;">Select Document Type</label>
+        <div class="doc-picker">
+          <button type="button" class="doc-btn selected" data-type="NIN">National ID (NIN)</button>
+          <button type="button" class="doc-btn" data-type="DL">Driver's License</button>
+          <button type="button" class="doc-btn" data-type="PASSPORT">Int'l Passport</button>
+        </div>
+
+        <form id="step1Form" class="auth-form">
+          <div class="form-group">
+            <label id="idNumberLabel">NIN Number (11 Digits)</label>
+            <input type="text" id="idNumberInput" placeholder="e.g. 12345678901" required />
+          </div>
+          <div class="form-group">
+            <label>Legal Full Name (as on ID)</label>
+            <input type="text" id="idFullName" placeholder="e.g. Alexander Rivers" required />
+          </div>
+          <button type="submit" class="btn btn-primary w-full" style="margin-top:10px;">Proceed to Face Capture</button>
+        </form>
+      </div>
+
+      <!-- ================= STEP 2: FACE CAPTURE ================= -->
+      <div id="step2Box" class="hidden">
+        <h3 style="margin-bottom:8px;">Step 2: Biometric Face Capture</h3>
+        <p class="muted" style="margin-bottom:14px;">Look directly into your camera inside the circular guide for instantaneous verification.</p>
+
+        <div class="camera-frame">
+          <video id="cameraVideo" autoplay playsinline muted></video>
+          <div class="scan-line" id="scanLine"></div>
+          <div id="cameraPlaceholder" style="text-align:center; padding:16px;">
+            <span style="font-size:2.8rem;">📷</span>
+            <p class="muted" style="font-size:0.8rem; margin-top:8px;">Camera inactive.<br/>Click "Start Camera" to scan.</p>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button type="button" class="btn btn-ghost w-full" id="startCameraBtn">Start Camera</button>
+          <button type="button" class="btn btn-primary w-full hidden" id="captureFaceBtn">Capture & Verify Face</button>
+        </div>
+      </div>
+
+      <!-- ================= STEP 3: ACCOUNT DETAILS ================= -->
+      <div id="step3Box" class="hidden">
+        <h3 style="margin-bottom:8px;">Step 3: Account Information</h3>
+        <p class="muted" style="margin-bottom:14px;">Confirm where your verified withdrawals should be disbursed.</p>
+
+        <form id="step3Form" class="auth-form">
+          <div class="form-group">
+            <label>Bank Name</label>
+            <input type="text" id="vBankName" placeholder="e.g. GTBank, OPay, Access Bank" required />
+          </div>
+          <div class="form-group">
+            <label>Account Number (10 Digits)</label>
+            <input type="text" id="vAccountNumber" maxlength="10" placeholder="0123456789" required />
+          </div>
+          <div class="form-group">
+            <label>Account Holder Name</label>
+            <input type="text" id="vAccountHolder" placeholder="Alexander Rivers" required />
+          </div>
+          <button type="submit" class="btn btn-primary w-full" style="margin-top:10px;">Complete Verification</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const toast = document.getElementById('toast');
+      function showToast(msg) {
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2800);
+      }
+
+      // State
+      let selectedDocType = 'NIN';
+      let idInfo = {};
+      let cameraStream = null;
+
+      // Badges
+      const badge1 = document.getElementById('badge1');
+      const badge2 = document.getElementById('badge2');
+      const badge3 = document.getElementById('badge3');
+
+      // Containers
+      const step1Box = document.getElementById('step1Box');
+      const step2Box = document.getElementById('step2Box');
+      const step3Box = document.getElementById('step3Box');
+
+      // Step 1: Doc Type Picker
+      const docBtns = document.querySelectorAll('.doc-btn');
+      const idNumberLabel = document.getElementById('idNumberLabel');
+      const idNumberInput = document.getElementById('idNumberInput');
+
+      docBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          docBtns.forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedDocType = btn.dataset.type;
+
+          if (selectedDocType === 'NIN') {
+            idNumberLabel.textContent = 'NIN Number (11 Digits)';
+            idNumberInput.placeholder = 'e.g. 12345678901';
+          } else if (selectedDocType === 'DL') {
+            idNumberLabel.textContent = "Driver's License Number";
+            idNumberInput.placeholder = 'e.g. ABC123456789';
+          } else {
+            idNumberLabel.textContent = 'International Passport Number';
+            idNumberInput.placeholder = 'e.g. A12345678';
+          }
+        });
+      });
+
+      // Step 1 Submission
+      document.getElementById('step1Form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const num = idNumberInput.value.trim();
+        const name = document.getElementById('idFullName').value.trim();
+
+        if (selectedDocType === 'NIN' && (num.length !== 11 || isNaN(num))) {
+          showToast('NIN must be exactly 11 digits.');
+          return;
+        }
+
+        idInfo = {
+          type: selectedDocType,
+          number: num,
+          fullName: name
+        };
+
+        // Transition to Step 2
+        badge1.classList.replace('active', 'completed');
+        badge2.classList.add('active');
+        step1Box.classList.add('hidden');
+        step2Box.classList.remove('hidden');
+      });
+
+      // Step 2: Camera Controls
+      const video = document.getElementById('cameraVideo');
+      const scanLine = document.getElementById('scanLine');
+      const placeholder = document.getElementById('cameraPlaceholder');
+      const startCameraBtn = document.getElementById('startCameraBtn');
+      const captureFaceBtn = document.getElementById('captureFaceBtn');
+
+      startCameraBtn.addEventListener('click', async () => {
+        try {
+          cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 480 } },
+            audio: false
+          });
+          video.srcObject = cameraStream;
+          placeholder.classList.add('hidden');
+          scanLine.style.display = 'block';
+          startCameraBtn.classList.add('hidden');
+          captureFaceBtn.classList.remove('hidden');
+          showToast('Camera active. Center your face inside the frame.');
+        } catch (err) {
+          showToast('Camera access declined or unavailable.');
+          // Fallback allow progression if testing without a physical webcam
+          placeholder.classList.add('hidden');
+          startCameraBtn.classList.add('hidden');
+          captureFaceBtn.classList.remove('hidden');
+        }
+      });
+
+      captureFaceBtn.addEventListener('click', () => {
+        captureFaceBtn.disabled = true;
+        captureFaceBtn.textContent = 'Scanning facial biometrics...';
+
+        // Simulated fake capture scanning period
+        setTimeout(() => {
+          // Stop camera hardware stream without storing any image frames
+          if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+          }
+          video.srcObject = null;
+          scanLine.style.display = 'none';
+
+          if (window.confetti) confetti();
+          showToast('Biometric face scan verified successfully!');
+
+          // Move to Step 3
+          badge2.classList.replace('active', 'completed');
+          badge3.classList.add('active');
+          step2Box.classList.add('hidden');
+          step3Box.classList.remove('hidden');
+
+          // Autofill known name if available
+          const existingBank = localStorage.getItem('fc_user_bank');
+          if (existingBank) {
+            try {
+              const b = JSON.parse(existingBank);
+              document.getElementById('vBankName').value = b.bankName || '';
+              document.getElementById('vAccountNumber').value = b.accountNumber || '';
+              document.getElementById('vAccountHolder').value = b.accountHolder || idInfo.fullName;
+            } catch (err) {}
+          } else {
+            document.getElementById('vAccountHolder').value = idInfo.fullName;
+          }
+        }, 1800);
+      });
+
+      // Step 3 Submission
+      document.getElementById('step3Form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const bankName = document.getElementById('vBankName').value.trim();
+        const accNum = document.getElementById('vAccountNumber').value.trim();
+        const accHolder = document.getElementById('vAccountHolder').value.trim();
+
+        if (accNum.length !== 10 || isNaN(accNum)) {
+          showToast('Bank account number must be 10 digits.');
+          return;
+        }
+
+        const verificationData = {
+          isVerified: true,
+          verifiedAt: Date.now(),
+          docType: idInfo.type,
+          docNumberMasked: idInfo.number.slice(0, 3) + '••••' + idInfo.number.slice(-3),
+          fullName: idInfo.fullName,
+          faceVerified: true
+        };
+
+        const bankData = {
+          bankName: bankName,
+          accountNumber: accNum,
+          accountHolder: accHolder
+        };
+
+        // Persist verified status and bank details
+        localStorage.setItem('fc_kyc_data', JSON.stringify(verificationData));
+        localStorage.setItem('fc_user_bank', JSON.stringify(bankData));
+
+        if (window.confetti) confetti();
+        showToast('Identity & Bank Account verified!');
+
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 1200);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+/* ==========================================================
+   FeedCoin dashboard || fixed nav + isolated tab layout
+   Loaded after styles.css
+   ========================================================== */
+
+:root {
+  --topbar-h: 60px;
+  --bottomnav-h: 64px;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+.dash-body {
+  padding-top: calc(var(--topbar-h) + env(safe-area-inset-top, 0px));
+  padding-bottom: 32px;
+}
+
+.muted { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
+
+/* ---------- Fixed top bar ---------- */
+.dash-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 500;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: color-mix(in srgb, var(--bg-color) 82%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--card-border);
+}
+.dash-topbar-inner {
+  max-width: 1200px;
+  height: var(--topbar-h);
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dash-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.dash-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 190, 40, 0.5);
+}
+.dash-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.btn-sm { padding: 7px 14px; font-size: 0.82rem; }
+
+/* Desktop tab links */
+.dash-tabs {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.dash-tabs a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 99px;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+.dash-tabs a:hover { color: var(--text-color); background: var(--card-bg); }
+.dash-tabs a.tab-link.active {
+  color: #fff;
+  background: var(--primary-gradient);
+  font-weight: 600;
+}
+
+/* ---------- Main content ---------- */
+.dash-main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 0;
+}
+.dashboard-tab-pane { flex-direction: column; gap: 16px; }
+.dashboard-tab-pane.active { display: flex; }
+
+.pane-head h1 { font-size: clamp(1.4rem, 5vw, 1.9rem); margin-bottom: 4px; }
+.pane-head p { color: var(--text-muted); font-size: 0.95rem; }
+
+.balance-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.22), rgba(59, 130, 246, 0.12));
+}
+.balance-hero span { color: var(--text-muted); font-size: 0.9rem; }
+.balance-hero h2 {
+  color: var(--accent-emerald);
+  font-size: clamp(1.7rem, 8vw, 2.4rem);
+  word-break: break-word;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.stat { display: flex; flex-direction: column; gap: 6px; padding: 18px; min-width: 0; }
+.stat span { color: var(--text-muted); font-size: 0.85rem; }
+.stat small { color: var(--text-muted); font-size: 0.75rem; }
+.stat h2 { font-size: clamp(1.05rem, 4.5vw, 1.45rem); word-break: break-word; }
+.stat-wide { grid-column: 1 / -1; align-items: flex-start; }
+.stat-wide h2 { color: var(--accent-emerald); }
+
+.section-card { display: flex; flex-direction: column; gap: 14px; }
+.section-card h3 { font-size: 1.1rem; }
+.section-card .investment-plans,
+.section-card .withdrawal-grid,
+.section-card .social-task-list,
+.section-card .history-list,
+.section-card .referral-box { margin-top: 0; }
+
+.investment-plans { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
+.withdrawal-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
+
+.mining-card { padding: 28px 20px; }
+.Coin-btn { width: clamp(110px, 38vw, 150px); height: clamp(110px, 38vw, 150px); }
+
+.task-input-group { flex-wrap: wrap; }
+.task-code-input { min-width: 0; }
+.task-input-group .btn { flex-shrink: 0; }
+
+.referral-box input { min-width: 0; font-size: 0.85rem; }
+
+.history-item { gap: 10px; }
+.history-item > div { min-width: 0; }
+.history-item strong { overflow-wrap: anywhere; }
+.history-empty { padding: 8px 0; }
+
+.modal-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.modal-content { max-width: min(460px, calc(100vw - 32px)); }
+
+.btn { min-height: 40px; }
+button:focus-visible, a:focus-visible, input:focus-visible {
+  outline: 2px solid #a29bfe;
+  outline-offset: 2px;
+}
+
+/* ---------- Fixed bottom nav (phones & small tablets) ---------- */
+.app-bottom-nav {
+  display: none;
+  padding: 0 4px env(safe-area-inset-bottom, 0px);
+  height: calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px));
+  gap: 0;
+  justify-content: stretch;
+  background: color-mix(in srgb, var(--bg-color) 90%, transparent);
+}
+.app-bottom-nav a {
+  flex: 1 1 0;
+  min-width: 0;
+  height: var(--bottomnav-h);
+  justify-content: center;
+  gap: 3px;
+  border-radius: 12px;
+  position: relative;
+}
+.app-bottom-nav .ico { font-size: 1.25rem; line-height: 1; }
+.app-bottom-nav .lbl {
+  font-size: clamp(0.58rem, 2.7vw, 0.72rem);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-bottom-nav a.tab-link.active { color: #a29bfe; }
+.app-bottom-nav a.tab-link.active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 25%;
+  right: 25%;
+  height: 3px;
+  border-radius: 0 0 4px 4px;
+  background: var(--primary-gradient);
+}
+
+/* ---------- Breakpoints ---------- */
+@media (max-width: 1000px) {
+  .dash-tabs { display: none; }
+  .app-bottom-nav { display: flex; }
+  .dash-body { padding-bottom: calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px) + 24px); }
+  .toast {
+    left: 16px;
+    right: 16px;
+    bottom: calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px) + 12px);
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .dash-topbar-inner { padding: 0 12px; }
+  .dash-user { gap: 6px; }
+  .dash-main { padding: 18px 12px 0; }
+  .glass-card { padding: 18px; border-radius: 20px; }
+  .logo { font-size: 1.2rem; }
+}
+
+@media (max-width: 360px) {
+  .dash-logo { width: 30px; height: 30px; }
+  .logo { font-size: 1.05rem; }
+  .avatar { width: 30px; height: 30px; }
+  .btn-sm { padding: 6px 10px; font-size: 0.78rem; }
+  .stat-grid { grid-template-columns: 1fr; }
+  .task-input-group .btn { width: 100%; }
+}
+
+@media (min-width: 1001px) {
+  .dash-body { padding-bottom: 48px; }
+  .dash-main { padding-top: 32px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+.quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.quick-actions .btn { text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+
+/* Six tabs: tighten the top bar on mid-size screens */
+@media (min-width: 1001px) and (max-width: 1180px) {
+  .dash-tabs a { padding: 8px 10px; font-size: 0.85rem; }
+  .user-display-name { display: none; }
+}

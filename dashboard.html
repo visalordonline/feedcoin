@@ -2,809 +2,415 @@
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard — FeedCoin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>FeedCoin | Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="dashboard.css" />
   <style>
-    :root {
-      --bg-color: #0d0f17;
-      --text-color: #f3f4f6;
-      --text-muted: #9ca3af;
-      --card-bg: rgba(255, 255, 255, 0.04);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --input-bg: rgba(255, 255, 255, 0.05);
-      --input-border: rgba(255, 255, 255, 0.12);
-      --primary-gradient: linear-gradient(135deg, #6c5ce7, #3b82f6);
-      --accent-emerald: #10b981;
-      --radius-lg: 24px;
-      --radius-md: 16px;
-      --radius-sm: 10px;
-      --font-heading: 'Space Grotesk', sans-serif;
-      --font-body: 'Inter', sans-serif;
-    }
-
-    html.light {
-      --bg-color: #f8fafc;
-      --text-color: #0f172a;
-      --text-muted: #64748b;
-      --card-bg: rgba(255, 255, 255, 0.7);
-      --card-border: rgba(0, 0, 0, 0.08);
-      --input-bg: rgba(0, 0, 0, 0.03);
-      --input-border: rgba(0, 0, 0, 0.12);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      font-family: var(--font-body);
-      overflow-x: hidden;
-      min-height: 100vh;
-      transition: background-color 0.3s ease, color 0.3s ease;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 16px;
-    }
-
-    /* Background Blobs */
-    .blob {
-      position: fixed;
-      width: 350px;
-      height: 350px;
-      filter: blur(120px);
-      z-index: -1;
-      border-radius: 50%;
-      opacity: 0.5;
-      pointer-events: none;
-    }
-    .blob-purple { top: 10%; left: -100px; background: #6c5ce7; }
-    .blob-blue { top: 40%; right: -100px; background: #3b82f6; }
-
-    /* Glassmorphism Cards */
-    .glass-card {
-      background: var(--card-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-lg);
-      padding: 20px;
-      width: 100%;
-    }
-
-    /* Typography */
-    h1, h2, h3, h4 {
-      font-family: var(--font-heading);
-    }
-
-    /* Buttons */
-    .btn {
-      padding: 10px 20px;
+    .channel-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      padding: 6px 14px;
       border-radius: 99px;
-      border: none;
       font-weight: 600;
-      cursor: pointer;
+      text-decoration: none;
       transition: all 0.2s ease;
     }
-    .btn-primary {
-      background: var(--primary-gradient);
+    .channel-action-btn.uncompleted {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #ef4444;
+    }
+    .channel-action-btn.uncompleted:hover {
+      background: #ef4444;
       color: #fff;
-      box-shadow: 0 4px 20px rgba(108, 92, 231, 0.4);
     }
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 24px rgba(108, 92, 231, 0.6);
+    .channel-action-btn.completed {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #10b981;
+      pointer-events: none;
     }
-    .btn-ghost {
-      background: transparent;
-      color: var(--text-color);
-    }
-    .btn-ghost:hover {
-      background: var(--card-border);
-    }
-
-    /* Navbar */
-    .navbar {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--card-border);
-      padding: 12px 0;
-    }
-    .nav-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .logo {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--text-color);
-      text-decoration: none;
-      font-family: var(--font-heading);
-    }
-    .logo span { color: #6c5ce7; }
-
-    .header-user-info {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .header-user-info .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--primary-gradient);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      color: #fff;
-      font-size: 0.85rem;
-    }
-    .user-display-name {
+    .required-tag {
+      font-size: 0.72rem;
+      background: rgba(245, 158, 11, 0.2);
+      color: #f59e0b;
+      padding: 2px 8px;
+      border-radius: 6px;
       font-weight: 600;
-      font-size: 0.85rem;
-    }
-    .nav-actions { display: flex; gap: 8px; align-items: center; }
-    .theme-toggle { background: none; border: none; font-size: 1.1rem; cursor: pointer; }
-
-    /* Dashboard Layout */
-    .dashboard {
-      padding: 20px 16px 100px;
-    }
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-    }
-
-    /* Balance Items */
-    .balance-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 12px;
-    }
-    .balance-item span { color: var(--text-muted); font-size: 0.9rem; }
-    .balance-item h2 { color: var(--accent-emerald); font-size: 1.5rem; }
-
-    /* Mining Card & Image Background Button */
-    .mining-card { text-align: center; }
-    .Coin-btn-wrapper { display: flex; justify-content: center; margin: 16px 0; }
-    .Coin-btn {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      border: 2px solid var(--card-border);
-      color: #fff;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      box-shadow: 0 0 30px rgba(108, 92, 231, 0.5);
-      transition: transform 0.2s ease;
-      background-image: url('logo.jpg');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-    }
-
-    .Coin-btn:hover { transform: scale(1.05); }
-    .Coin-btn.active { animation: spin 2s linear infinite; }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-
-    .timer-display {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    /* Referral Box */
-    .referral-box {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    .referral-box input {
-      flex: 1;
-      padding: 10px 12px;
-      background: var(--input-bg);
-      border: 1px solid var(--input-border);
-      border-radius: var(--radius-sm);
-      color: var(--text-color);
-      outline: none;
-      font-size: 0.85rem;
-    }
-
-    /* Social Task List */
-    .social-task-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 12px;
-    }
-    .task-item {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 12px;
-      background: var(--input-bg);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-sm);
-    }
-    .task-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .task-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .task-info strong { color: var(--accent-emerald); }
-    .task-link {
-      color: #3b82f6;
-      font-size: 0.85rem;
-      text-decoration: none;
-    }
-    .task-input-group {
-      display: flex;
-      gap: 8px;
-    }
-    .task-code-input {
-      flex: 1;
-      padding: 8px 12px;
-      background: var(--bg-color);
-      border: 1px solid var(--input-border);
-      border-radius: var(--radius-sm);
-      color: var(--text-color);
-      outline: none;
-      font-size: 0.85rem;
-    }
-
-    /* Investment Section */
-    .investment-plans {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 12px;
-      margin-top: 12px;
-    }
-    .plan-card {
-      background: var(--input-bg);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-sm);
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      text-align: center;
-    }
-    .plan-card h4 { font-size: 1rem; color: #6c5ce7; }
-    .plan-return { font-size: 1rem; font-weight: bold; color: var(--accent-emerald); }
-
-    /* Withdrawal Options */
-    .withdrawal-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 12px;
-      margin-top: 12px;
-    }
-    .withdraw-card {
-      background: var(--input-bg);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-sm);
-      padding: 12px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    /* History List */
-    .history-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    .history-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 12px;
-      background: var(--input-bg);
-      border-radius: var(--radius-sm);
-      border-left: 3px solid var(--accent-emerald);
-      font-size: 0.85rem;
-    }
-    .earned-amount { color: var(--accent-emerald); font-weight: 700; }
-
-    /* Toast Notification */
-    .toast {
-      position: fixed;
-      bottom: 70px;
-      right: 16px;
-      background: var(--accent-emerald);
-      color: #fff;
-      padding: 12px 20px;
-      border-radius: var(--radius-md);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      transform: translateY(100px);
-      opacity: 0;
-      transition: all 0.3s ease;
-      z-index: 2000;
-    }
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    /* Mobile Bottom Navigation Bar */
-    .app-bottom-nav {
-      display: none;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: var(--bg-color);
-      border-top: 1px solid var(--card-border);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      z-index: 1000;
-      padding: 8px 16px;
-      justify-content: space-around;
-      align-items: center;
-    }
-    .app-bottom-nav a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.75rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-    }
-    .app-bottom-nav a.active { color: #6c5ce7; font-weight: bold; }
-
-    /* Responsive Mobile Screen View */
-    @media (max-width: 768px) {
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
-      .investment-card,
-      .social-tasks-card,
-      .withdrawal-card,
-      .history-card {
-        grid-column: span 1 !important;
-      }
-      .Coin-btn {
-        width: 100px;
-        height: 100px;
-      }
-      .user-display-name {
-        display: none;
-      }
-      .app-bottom-nav {
-        display: flex;
-      }
+      margin-left: 6px;
     }
   </style>
 </head>
-<body>
+<body class="dash-body">
 
-  <!-- Background Glows -->
   <div class="blob blob-purple"></div>
   <div class="blob blob-blue"></div>
+  <div class="blob blob-emerald"></div>
 
-  <!-- Header / Navbar -->
-  <nav class="navbar">
-    <div class="container nav-container">
-      <a href="dashboard_3.html" class="logo">Feed<span>Coin</span></a>
-      
-      <div class="header-user-info">
-        <div class="avatar" id="headerAvatar">A</div>
-        <span class="user-display-name" id="headerUserName">Alex Rivers</span>
-      </div>
+  <!-- FIXED TOP BAR -->
+  <header class="dash-topbar">
+    <div class="dash-topbar-inner">
+      <a href="index.html" class="dash-brand">
+        <img src="logo.jpg" alt="FeedCoin logo" class="dash-logo" />
+        <span class="logo">Feed<span>Coin</span></span>
+      </a>
 
-      <div class="nav-actions">
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle Theme">🌙</button>
-        <button class="btn btn-ghost" id="logoutBtn">Logout</button>
+      <!-- Desktop Nav -->
+      <nav class="dash-tabs" aria-label="Dashboard sections">
+        <a href="#" class="tab-link active" data-tab="tab-balance">💰 Balances</a>
+        <a href="#" class="tab-link" data-tab="tab-earn">⛏️ Mining & Tasks</a>
+        <a href="#" class="tab-link" data-tab="tab-invest">📈 Investment</a>
+        <a href="#" class="tab-link" data-tab="tab-withdraw">💳 Withdraw</a>
+        <a href="#" class="tab-link" data-tab="tab-profile">👤 Profile</a>
+        <a href="#" class="tab-link" data-tab="tab-team">👥 Referrals</a>
+      </nav>
+
+      <div class="dash-user">
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌙</button>
+        <div class="header-user-info tab-link" data-tab="tab-profile" style="cursor:pointer;">
+          <div class="avatar" id="headerAvatar">A</div>
+          <span class="user-display-name" id="headerUserName">Alex Rivers</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="logoutBtn">Logout</button>
       </div>
     </div>
-  </nav>
+  </header>
 
-  <!-- Main Dashboard Grid -->
-  <section class="dashboard container">
-    <div class="dashboard-grid">
-      
-      <!-- Balances Overview Card -->
-      <div class="glass-card wallet-card">
-        <h3>USD Wallet Balance</h3>
-        <div class="balance-item">
-          <span>Total Balance</span>
-          <h2 id="totalCoins">$10.00</h2>
+  <main class="dash-main">
+
+    <!-- ============ 1. ALL BALANCES ============ -->
+    <section class="dashboard-tab-pane active" id="tab-balance">
+      <div class="pane-head">
+        <h1>All Balances</h1>
+        <p>Real-time breakdown of all balances across your account.</p>
+      </div>
+
+      <div class="glass-card balance-hero">
+        <span>Total Available Account Balance</span>
+        <h2 id="totalCoins">₦0.00</h2>
+      </div>
+
+      <div class="stat-grid">
+        <div class="glass-card stat">
+          <span>Active Invested Capital</span>
+          <h2 id="balanceInvested">₦0.00</h2>
+          <small>Capital generating daily returns</small>
         </div>
-        <div class="balance-item">
-          <span>Active Investment</span>
-          <p id="activeInvestments">$0.00</p>
+
+        <div class="glass-card stat">
+          <span>Mining Balance</span>
+          <h2 id="balanceMining">₦0.00</h2>
+          <small>Accumulated from daily taps</small>
+        </div>
+
+        <div class="glass-card stat">
+          <span>Daily Task Balance</span>
+          <h2 id="balanceTask">₦0.00</h2>
+          <small id="taskMinNotice" style="color:#f59e0b;">Min. withdrawal: ₦2,000.00</small>
+        </div>
+
+        <div class="glass-card stat">
+          <span>Accumulated Yield</span>
+          <h2 id="balanceYield">₦0.00</h2>
+          <small>4.5% daily earnings</small>
         </div>
       </div>
 
-      <!-- Main Mining Task Card -->
-      <div class="glass-card mining-card" id="miningCard">
-        <h3>24-Hour Mining Tap</h3>
-        <p>Tap to extract daily cash rewards.</p>
-        <h3 style="color: #10b981; font-size: 0.95rem; margin-top: 6px;">Tap on the Logo to mine</h3>
+      <div class="quick-actions">
+        <a href="#" class="btn btn-primary tab-link" data-tab="tab-invest">Invest More</a>
+        <a href="#" class="btn btn-ghost tab-link" data-tab="tab-withdraw">Withdraw Funds</a>
+      </div>
+    </section>
+
+    <!-- ============ 2. COMBINED MINING & MANDATORY SOCIAL TASKS ============ -->
+    <section class="dashboard-tab-pane" id="tab-earn">
+      <div class="pane-head">
+        <h1>Mining & Daily Tasks</h1>
+        <p>You must subscribe & follow our official channels to unlock video tasks.</p>
+      </div>
+
+      <div class="glass-card mining-card">
+        <h3>⛏️ Daily Tap Mining</h3>
+        <p class="muted">Reward: ₦500.00 / day</p>
         <div class="Coin-btn-wrapper">
-          <button class="Coin-btn" id="CoinBtn">
-            <span id="CoinBtnText" style="display:none;">Mining</span>
+          <button class="Coin-btn" id="CoinBtn" aria-label="Tap to mine">
+            <span style="font-size:2rem;">🪙</span>
+            <span id="miningBtnText">TAP</span>
           </button>
         </div>
-        <div class="timer-display" id="miningTimer">Ready to Mine</div>
+        <p class="timer-display" id="miningCooldownText">Tap once daily to claim your coins.</p>
       </div>
 
-      <!-- Referrer Info Card -->
-      <div class="glass-card referral-card">
-        <h3>Referral Center</h3>
-        <p>Invited by: <strong id="referrerName">@crypto_king</strong></p>
-        <div class="balance-item" style="margin: 12px 0;">
-          <span>Referral Earnings</span>
-          <h3 id="referralEarnings">$4.00</h3>
+      <div class="glass-card section-card">
+        <h3>🎬 Daily Video Tasks (₦200.00 Each)</h3>
+        <p class="muted">Watch video and enter the secret code. <em>Subscribing and following is mandatory to claim your earnings!</em></p>
+
+        <div class="social-task-list">
+          <!-- 1. YouTube Task with Mandatory Channel Subscription -->
+          <div class="task-item" id="taskItem-yt">
+            <div class="task-header">
+              <div class="task-info">
+                <strong>+₦200.00 <span class="required-tag">Subscription Required</span></strong>
+                <span>📺 FeedCoin Official YouTube Channel</span>
+                <div style="margin-top:6px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                  <a href="https://www.youtube.com/@FEEDCOINAPP" target="_blank" rel="noopener" class="channel-action-btn uncompleted" id="ytChannelBtn" data-channel="yt">
+                    🔔 Step 1: Subscribe on YouTube
+                  </a>
+                  <a class="task-link" id="ytVideoLink" href="https://www.youtube.com/@FEEDCOINAPP" target="_blank" rel="noopener">Step 2: Watch Video for Code</a>
+                </div>
+              </div>
+            </div>
+            <div class="task-input-group" style="margin-top:10px;">
+              <input type="text" class="task-code-input" id="ytCodeInput" placeholder="Enter secret code from video" />
+              <button class="btn btn-primary task-btn" data-platform="yt" id="ytVerifyBtn">Verify & Claim</button>
+            </div>
+            <small id="ytCooldownText" class="muted"></small>
+          </div>
+
+          <!-- 2. Facebook Task with Mandatory Page Follow -->
+          <div class="task-item" id="taskItem-fb">
+            <div class="task-header">
+              <div class="task-info">
+                <strong>+₦200.00 <span class="required-tag">Follow Required</span></strong>
+                <span>📘 FeedCoin Official Facebook Page</span>
+                <div style="margin-top:6px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                  <a href="https://www.facebook.com/profile.php?id=61595119085030&mibextid=ZbWKwL" target="_blank" rel="noopener" class="channel-action-btn uncompleted" id="fbChannelBtn" data-channel="fb">
+                    👍 Step 1: Follow on Facebook
+                  </a>
+                  <a class="task-link" id="fbVideoLink" href="https://www.facebook.com/profile.php?id=61595119085030&mibextid=ZbWKwL" target="_blank" rel="noopener">Step 2: Watch Video for Code</a>
+                </div>
+              </div>
+            </div>
+            <div class="task-input-group" style="margin-top:10px;">
+              <input type="text" class="task-code-input" id="fbCodeInput" placeholder="Enter secret code from video" />
+              <button class="btn btn-primary task-btn" data-platform="fb" id="fbVerifyBtn">Verify & Claim</button>
+            </div>
+            <small id="fbCooldownText" class="muted"></small>
+          </div>
+
+          <!-- 3. TikTok Task -->
+          <div class="task-item" id="taskItem-tt">
+            <div class="task-header">
+              <div class="task-info">
+                <strong>+₦200.00</strong>
+                <span>🎵 TikTok Video Task</span>
+                <div style="margin-top:6px;">
+                  <a class="task-link" id="ttVideoLink" href="https://tiktok.com" target="_blank" rel="noopener">Watch TikTok Video for Code</a>
+                </div>
+              </div>
+            </div>
+            <div class="task-input-group" style="margin-top:10px;">
+              <input type="text" class="task-code-input" id="ttCodeInput" placeholder="Enter code from TikTok" />
+              <button class="btn btn-primary task-btn" data-platform="tt" id="ttVerifyBtn">Verify & Claim</button>
+            </div>
+            <small id="ttCooldownText" class="muted"></small>
+          </div>
         </div>
-        <div class="referral-box">
-          <input type="text" id="refCodeInput" value="ALEX-Cash" readonly />
-          <button class="btn btn-primary" id="copyRefBtn">Copy</button>
+      </div>
+    </section>
+
+    <!-- ============ INVESTMENT PLANS ============ -->
+    <section class="dashboard-tab-pane" id="tab-invest">
+      <div class="pane-head">
+        <h1>Investment Plans</h1>
+        <p>Deposit securely to earn <strong>4.5%</strong> daily yield every 24 hours.</p>
+      </div>
+
+      <div class="stat-grid">
+        <div class="glass-card stat">
+          <span>Active Invested Capital</span>
+          <h2 id="activeInvestments">₦0.00</h2>
+        </div>
+        <div class="glass-card stat">
+          <span>Daily Yield Rate (4.5%)</span>
+          <h2 id="dailyYieldDisplay">+₦0.00 / day</h2>
+          <button class="btn btn-primary btn-sm" id="claimDailyBtn" style="margin-top:8px;">Claim Yield</button>
         </div>
       </div>
 
-      <!-- Investment Plans Card -->
-      <div class="glass-card investment-card" id="invest" style="grid-column: span 2;">
-        <h3>USD Investment Plans</h3>
-        <p>Stake your balance into guaranteed daily yield pools.</p>
+      <div class="glass-card section-card">
+        <h3 style="color:#a29bfe;">🚀 Starter Packages (4.5% Daily)</h3>
         <div class="investment-plans">
           <div class="plan-card">
-            <h4>Tier 1</h4>
-            <div class="plan-return">$2.00</div>
-            <small>Yield: +5%/wk</small>
-            <button class="btn btn-primary invest-btn" data-plan="Tier 1 ($2)" data-min="2">Invest $2</button>
+            <h4>FeedCoin Starter</h4>
+            <div class="plan-return">₦5,000</div>
+            <span class="daily-badge">+₦225 / day</span>
+            <button class="btn btn-primary invest-btn" data-plan="FeedCoin Starter" data-amount="5000">Invest Now</button>
           </div>
           <div class="plan-card">
-            <h4>Tier 2</h4>
-            <div class="plan-return">$5.00</div>
-            <small>Yield: +8%/wk</small>
-            <button class="btn btn-primary invest-btn" data-plan="Tier 2 ($5)" data-min="5">Invest $5</button>
+            <h4>FeedCoin Basic</h4>
+            <div class="plan-return">₦15,000</div>
+            <span class="daily-badge">+₦675 / day</span>
+            <button class="btn btn-primary invest-btn" data-plan="FeedCoin Basic" data-amount="15000">Invest Now</button>
           </div>
           <div class="plan-card">
-            <h4>Tier 3</h4>
-            <div class="plan-return">$10.00</div>
-            <small>Yield: +12%/wk</small>
-            <button class="btn btn-primary invest-btn" data-plan="Tier 3 ($10)" data-min="10">Invest $10</button>
-          </div>
-          <div class="plan-card">
-            <h4>Tier 4</h4>
-            <div class="plan-return">$15.00</div>
-            <small>Yield: +18%/wk</small>
-            <button class="btn btn-primary invest-btn" data-plan="Tier 4 ($15)" data-min="15">Invest $15</button>
-          </div>
-          <div class="plan-card">
-            <h4>Tier 5</h4>
-            <div class="plan-return">$20.00</div>
-            <small>Yield: +25%/wk</small>
-            <button class="btn btn-primary invest-btn" data-plan="Tier 5 ($20)" data-min="20">Invest $20</button>
+            <h4>FeedCoin Bronze</h4>
+            <div class="plan-return">₦30,000</div>
+            <span class="daily-badge">+₦1,350 / day</span>
+            <button class="btn btn-primary invest-btn" data-plan="FeedCoin Bronze" data-amount="30000">Invest Now</button>
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- Social Watch Tasks -->
-      <div class="glass-card social-tasks-card" id="tasks" style="grid-column: span 2;">
-        <h3>Watch & Earn Daily Tasks ($0.33 each)</h3>
-        <p>Watch video tasks below ($0.33/each) to earn nearly $1.00 daily. Enter code & submit.</p>
-        <div class="social-task-list">
-          
-          <div class="task-item">
-            <div class="task-header">
-              <div class="task-info">
-                <span>📹 Watch YouTube Short 1</span>
-                <strong>+$0.33 USD</strong>
-                <a href="https://youtube.com" target="_blank" class="task-link">🔗 Open Video Link</a>
-              </div>
-            </div>
-            <div class="task-input-group">
-              <input type="text" class="task-code-input" placeholder="Enter video code..." />
-              <button class="btn btn-primary task-btn" data-reward="0.33" data-code="YT01">Submit</button>
-            </div>
-          </div>
-
-          <div class="task-item">
-            <div class="task-header">
-              <div class="task-info">
-                <span>📹 Watch YouTube Short 2</span>
-                <strong>+$0.33 USD</strong>
-                <a href="https://youtube.com" target="_blank" class="task-link">🔗 Open Video Link</a>
-              </div>
-            </div>
-            <div class="task-input-group">
-              <input type="text" class="task-code-input" placeholder="Enter video code..." />
-              <button class="btn btn-primary task-btn" data-reward="0.33" data-code="YT02">Submit</button>
-            </div>
-          </div>
-
-          <div class="task-item">
-            <div class="task-header">
-              <div class="task-info">
-                <span>📹 Watch YouTube Short 3</span>
-                <strong>+$0.33 USD</strong>
-                <a href="https://youtube.com" target="_blank" class="task-link">🔗 Open Video Link</a>
-              </div>
-            </div>
-            <div class="task-input-group">
-              <input type="text" class="task-code-input" placeholder="Enter video code..." />
-              <button class="btn btn-primary task-btn" data-reward="0.33" data-code="YT03">Submit</button>
-            </div>
-          </div>
-
-        </div>
+    <!-- ============ 3. WITHDRAWAL TAB ============ -->
+    <section class="dashboard-tab-pane" id="tab-withdraw">
+      <div class="pane-head">
+        <h1>Withdraw Funds</h1>
+        <p>Request funds transfer straight to your linked bank account.</p>
       </div>
 
-      <!-- Withdrawal Section -->
-      <div class="glass-card withdrawal-card" id="withdraw" style="grid-column: span 2;">
-        <h3>Withdraw Earnings (Up to 3 Times Maximum)</h3>
-        <p>Withdraw your balance directly in USD. You have 3 withdrawal attempts allowed.</p>
-        <div class="withdrawal-grid">
-          <div class="withdraw-card">
-            <h4>Withdrawal #1</h4>
-            <small>Status: Ready</small>
-            <button class="btn btn-primary withdraw-btn" data-slot="1">Request Payout</button>
-          </div>
-          <div class="withdraw-card">
-            <h4>Withdrawal #2</h4>
-            <small>Status: Ready</small>
-            <button class="btn btn-primary withdraw-btn" data-slot="2">Request Payout</button>
-          </div>
-          <div class="withdraw-card">
-            <h4>Withdrawal #3</h4>
-            <small>Status: Ready</small>
-            <button class="btn btn-primary withdraw-btn" data-slot="3">Request Payout</button>
-          </div>
-        </div>
+      <div class="glass-card balance-hero">
+        <span>Withdrawable Account Balance</span>
+        <h2 id="withdrawTabBalance">₦0.00</h2>
+        <small id="withdrawThresholdHint" class="muted" style="color:#f59e0b;"></small>
       </div>
 
-      <!-- Earnings History -->
-      <div class="glass-card history-card" style="grid-column: span 2;">
-        <h3>Transaction & Yield History</h3>
+      <div class="glass-card section-card">
+        <h3>Bank Transfer Payout</h3>
+        <div id="savedAccountBox" class="stat hidden" style="margin-bottom:12px; border:1px solid var(--card-border); border-radius:12px; padding:12px;">
+          <span>Linked Bank Account</span>
+          <strong id="savedAccountDisplay">No account linked</strong>
+          <button class="btn btn-ghost btn-sm" id="editBankBtn" style="margin-top:6px; align-self: flex-start;">Change Details</button>
+        </div>
+        <button class="btn btn-primary w-full" id="withdrawAllBtn">Request Withdrawal</button>
+      </div>
+
+      <div class="glass-card section-card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3>Withdrawal History</h3>
+          <span class="muted" style="font-size:0.8rem;">Saved Permanently</span>
+        </div>
         <ul class="history-list" id="historyList">
-          <li class="history-item">
-            <div>
-              <strong>Daily Tap Mining</strong>
-              <small>Today, 10:30 AM</small>
-            </div>
-            <span class="earned-amount">+$1.00 USD</span>
-          </li>
-          <li class="history-item">
-            <div>
-              <strong>YouTube Watch Task</strong>
-              <small>Today, 09:15 AM</small>
-            </div>
-            <span class="earned-amount">+$0.33 USD</span>
-          </li>
+          <li class="history-empty muted">No withdrawal history yet.</li>
         </ul>
       </div>
+    </section>
 
-    </div>
-  </section>
+    <!-- ============ 4. USER PROFILE ============ -->
+    <section class="dashboard-tab-pane" id="tab-profile">
+      <div class="pane-head">
+        <h1>My Profile & KYC</h1>
+        <p>Manage your account identity, security, and linked payment details.</p>
+      </div>
 
-  <!-- Toast Notification -->
-  <div class="toast" id="toast"></div>
+      <div class="glass-card section-card">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div class="avatar" style="width:64px; height:64px; font-size:1.6rem;" id="profileAvatar">A</div>
+          <div>
+            <h2 id="profileName" style="font-size:1.4rem;">Alex Rivers</h2>
+            <p class="muted" id="profileEmail">investor@feedcoin.io</p>
+          </div>
+        </div>
+      </div>
 
-  <!-- Mobile Bottom Navigation Bar -->
-  <nav class="app-bottom-nav">
-    <a href="#miningCard" class="active">
-      <span>⛏️</span>
-      <span>Mine</span>
-    </a>
-    <a href="#tasks">
-      <span>📹</span>
-      <span>Tasks</span>
-    </a>
-    <a href="#invest">
-      <span>📈</span>
-      <span>Invest</span>
-    </a>
-    <a href="#withdraw">
-      <span>💳</span>
-      <span>Withdraw</span>
-    </a>
+      <div class="glass-card section-card">
+        <h3>Identity Verification (KYC)</h3>
+        <div id="kycStatusBox" class="overview-stat" style="border-radius:12px; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span id="kycBadge" style="font-weight:700; color:#ef4444;">Status: Not Verified</span>
+            <a href="verification.html" id="kycActionBtn" class="btn btn-primary btn-sm">Verify ID Now</a>
+          </div>
+          <div id="kycDetailsList" style="margin-top:12px; display:none; flex-direction:column; gap:6px; font-size:0.85rem;">
+            <div><strong>Document Type:</strong> <span id="kycDocType">-</span></div>
+            <div><strong>ID Number:</strong> <span id="kycDocNum">-</span></div>
+            <div><strong>Biometric Face Scan:</strong> <span style="color:var(--accent-emerald);">Verified ✓</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card section-card">
+        <h3>Connected Bank Account</h3>
+        <div id="profileBankDetails" class="muted">No bank details added yet.</div>
+      </div>
+    </section>
+
+    <!-- ============ REFERRALS ============ -->
+    <section class="dashboard-tab-pane" id="tab-team">
+      <div class="pane-head">
+        <h1>Referral Program</h1>
+        <p>Share your link with your network.</p>
+      </div>
+      <div class="glass-card section-card">
+        <div class="referral-box">
+          <input type="text" id="refCodeInput" value="https://feedcoin.io/ref/alexCoinr" readonly />
+          <button class="btn btn-primary" id="copyRefBtn">Copy Link</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Mobile Bottom Nav -->
+  <nav class="app-bottom-nav" aria-label="Dashboard sections">
+    <a href="#" class="tab-link active" data-tab="tab-balance"><span class="ico">💰</span><span class="lbl">Balance</span></a>
+    <a href="#" class="tab-link" data-tab="tab-earn"><span class="ico">⛏️</span><span class="lbl">Tasks</span></a>
+    <a href="#" class="tab-link" data-tab="tab-invest"><span class="ico">📈</span><span class="lbl">Invest</span></a>
+    <a href="#" class="tab-link" data-tab="tab-withdraw"><span class="ico">💳</span><span class="lbl">Withdraw</span></a>
+    <a href="#" class="tab-link" data-tab="tab-profile"><span class="ico">👤</span><span class="lbl">Profile</span></a>
+    <a href="#" class="tab-link" data-tab="tab-team"><span class="ico">👥</span><span class="lbl">Refer</span></a>
   </nav>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const isLoggedIn = localStorage.getItem('is_logged_in') === 'true';
-      if (!isLoggedIn) {
-        window.location.href = 'index.html';
-        return;
-      }
+  <!-- WITHDRAWAL AMOUNT MODAL -->
+  <div class="modal-overlay hidden" id="withdrawAmountModal">
+    <div class="modal-content glass-card">
+      <button class="modal-close" id="closeWithdrawModal">&times;</button>
+      <div style="text-align:center; margin-bottom:12px;">
+        <span style="font-size:2.4rem;">💸</span>
+        <h3>Withdraw Funds</h3>
+        <p class="muted" style="font-size:0.85rem;">Enter the amount you wish to withdraw.</p>
+      </div>
+      <form id="withdrawAmountForm" class="auth-form">
+        <div class="form-group">
+          <label>Available Balance</label>
+          <input type="text" id="modalAvailableBal" readonly style="opacity:0.8; font-weight:bold;" />
+        </div>
+        <div class="form-group">
+          <label>Withdrawal Amount (₦)</label>
+          <input type="number" id="withdrawAmountInput" min="500" step="100" placeholder="e.g. 5000" required />
+        </div>
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 10px; font-size: 0.8rem; color: #f59e0b;">
+          ⚠️ Notice: Withdrawals are submitted directly to administration. You will receive your payment immediately admin approves it.
+        </div>
+        <button type="submit" class="btn btn-primary w-full" style="margin-top:6px;">Submit Withdrawal</button>
+      </form>
+    </div>
+  </div>
 
-      const themeToggle = document.getElementById('themeToggle');
-      const logoutBtn = document.getElementById('logoutBtn');
-      const CoinBtn = document.getElementById('CoinBtn');
-      const totalCoins = document.getElementById('totalCoins');
-      const pendingCoins = document.getElementById('activeInvestments');
-      const toast = document.getElementById('toast');
-      const headerUserName = document.getElementById('headerUserName');
-      const headerAvatar = document.getElementById('headerAvatar');
-      const historyList = document.getElementById('historyList');
+  <!-- Bank Details Modal -->
+  <div class="modal-overlay hidden" id="bankModal">
+    <div class="modal-content glass-card">
+      <button class="modal-close" id="closeBankModal">&times;</button>
+      <h3>Enter Bank Account Details</h3>
+      <p class="muted" style="margin-bottom:16px;">Provide the bank account to credit your payout.</p>
+      <form id="bankForm" class="auth-form">
+        <div class="form-group">
+          <label>Bank Name</label>
+          <input type="text" id="bankNameInput" placeholder="e.g. OPay, GTBank, Access Bank" required />
+        </div>
+        <div class="form-group">
+          <label>Account Number (10 Digits)</label>
+          <input type="text" id="accountNumberInput" maxlength="10" placeholder="0123456789" required />
+        </div>
+        <div class="form-group">
+          <label>Account Holder Name</label>
+          <input type="text" id="accountHolderInput" placeholder="e.g. Alex Rivers" required />
+        </div>
+        <button type="submit" class="btn btn-primary w-full">Save Bank Details</button>
+      </form>
+    </div>
+  </div>
 
-      const savedName = localStorage.getItem('user_name') || 'Alex Rivers';
-      headerUserName.textContent = savedName;
-      headerAvatar.textContent = savedName.charAt(0).toUpperCase();
+  <div class="toast" id="toast"></div>
 
-      let currentBalance = 10.00;
-      let activeInvested = 0.00;
-      let isMining = false;
-
-      themeToggle?.addEventListener('click', () => {
-        document.documentElement.classList.toggle('light');
-        themeToggle.textContent = document.documentElement.classList.contains('light') ? '☀️' : '🌙';
-      });
-
-      logoutBtn?.addEventListener('click', () => {
-        localStorage.removeItem('is_logged_in');
-        window.location.href = 'index.html';
-      });
-
-      function showToast(msg) {
-        toast.textContent = msg;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 2500);
-      }
-
-      function addHistoryItem(title, amount, isDeduction = false) {
-        const li = document.createElement('li');
-        li.className = 'history-item';
-        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        const sign = isDeduction ? '-' : '+';
-        const colorStyle = isDeduction ? 'style="color: #ef4444;"' : '';
-
-        li.innerHTML = `
-          <div>
-            <strong>${title}</strong>
-            <small>Today, ${now}</small>
-          </div>
-          <span class="earned-amount" ${colorStyle}>${sign}$${amount.toFixed(2)} USD</span>
-        `;
-        historyList.prepend(li);
-      }
-
-      // Tap Mining Event
-      CoinBtn?.addEventListener('click', () => {
-        if (isMining) return;
-
-        isMining = true;
-        CoinBtn.classList.add('active');
-
-        setTimeout(() => {
-          isMining = false;
-          CoinBtn.classList.remove('active');
-          
-          const reward = 0.50;
-          currentBalance += reward;
-          totalCoins.textContent = `$${currentBalance.toFixed(2)}`;
-          
-          addHistoryItem('Daily Cash Mining', reward);
-          
-          if (window.confetti) {
-            confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
-          }
-          showToast(`Mined +$${reward.toFixed(2)} USD!`);
-        }, 2000);
-      });
-
-      // Task Verification Event
-      document.querySelectorAll('.task-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const reward = parseFloat(btn.dataset.reward);
-          const taskContainer = btn.closest('.task-item');
-          const codeInput = taskContainer.querySelector('.task-code-input');
-          const taskTitle = taskContainer.querySelector('.task-info span').textContent;
-          const userEnteredCode = codeInput.value.trim();
-
-          if (!userEnteredCode) {
-            showToast('Please enter the code from the video!');
-            return;
-          }
-
-          btn.disabled = true;
-          btn.textContent = 'Verifying...';
-
-          setTimeout(() => {
-            btn.textContent = 'Submitted';
-            btn.classList.replace('btn-primary', 'btn-ghost');
-            codeInput.disabled = true;
-
-            currentBalance += reward;
-            totalCoins.textContent = `$${currentBalance.toFixed(2)}`;
-
-            addHistoryItem(taskTitle, reward);
-            if (window.confetti) {
-              confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 } });
-            }
-            showToast(`Code Verified! Earned +$${reward.toFixed(2)} USD!`);
-          }, 1500);
-        });
-      });
-
-      // Investment Event
-      document.querySelectorAll('.invest-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const planName = btn.dataset.plan;
-          const minAmount = parseFloat(btn.dataset.min);
-
-          if (currentBalance < minAmount) {
-            showToast(`Insufficient balance! Minimum required: $${minAmount.toFixed(2)} USD.`);
-            return;
-          }
-
-          currentBalance -= minAmount;
-          activeInvested += minAmount;
-
-          totalCoins.textContent = `$${currentBalance.toFixed(2)}`;
-          pendingCoins.textContent = `$${activeInvested.toFixed(2)}`;
-
-          addHistoryItem(`Invested in ${planName}`, minAmount, true);
-          showToast(`Successfully invested $${minAmount.toFixed(2)} in ${planName}!`);
-        });
-      });
-
-      // Withdrawal Event
-      document.querySelectorAll('.withdraw-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          if (currentBalance <= 0) {
-            showToast('No funds available for withdrawal!');
-            return;
-          }
-
-          const slotNum = btn.dataset.slot;
-          const withdrawAmount = currentBalance;
-
-          currentBalance = 0;
-          totalCoins.textContent = `$0.00`;
-
-          btn.disabled = true;
-          btn.textContent = 'Processed';
-          btn.classList.replace('btn-primary', 'btn-ghost');
-          btn.previousElementSibling.textContent = 'Status: Paid';
-
-          addHistoryItem(`Withdrawal #${slotNum}`, withdrawAmount, true);
-          showToast(`Successfully withdrew $${withdrawAmount.toFixed(2)} USD!`);
-        });
-      });
-
-      // Copy Referral Link Event
-      document.getElementById('copyRefBtn')?.addEventListener('click', () => {
-        const code = document.getElementById('refCodeInput').value;
-        navigator.clipboard.writeText(code);
-        showToast('Referral link copied!');
-      });
-    });
-  </script>
+  <script src="https://checkout.flutterwave.com/v3.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="config.js"></script>
+  <script src="dashboard.js"></script>
 </body>
 </html>

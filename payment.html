@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FeedCoin || Flutterwave Payment</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <script src="https://checkout.flutterwave.com/v3.js"></script>
+</head>
+<body class="dash-body">
+  <div class="dash-main" style="max-width: 500px; margin: 40px auto; padding: 16px;">
+    <div class="glass-card section-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>Investment Checkout</h2>
+        <a href="dashboard.html" class="btn btn-ghost btn-sm">Cancel</a>
+      </div>
+      <p class="muted">Complete payment using Flutterwave to activate your daily returns.</p>
+
+      <div style="padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; margin: 16px 0;">
+        <p class="muted">Selected Plan: <strong id="planName" style="color:#fff;">Starter</strong></p>
+        <h1 id="amountDisplay" style="color:var(--accent-emerald); margin-top: 8px;">₦5,000.00</h1>
+      </div>
+
+      <form id="paymentForm" class="auth-form">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="custName" value="Alex Rivers" required />
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="custEmail" value="alex@example.com" required />
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="custPhone" value="+2348000000000" required />
+        </div>
+        <button type="submit" class="btn btn-primary w-full" id="payBtn">Pay with Flutterwave</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const plan = params.get('plan') || 'Starter';
+    const amount = parseFloat(params.get('amount')) || 5000;
+
+    document.getElementById('planName').textContent = plan;
+    document.getElementById('amountDisplay').textContent = '₦' + amount.toLocaleString('en-NG', { minimumFractionDigits: 2 });
+
+    const savedName = localStorage.getItem('user_name');
+    if (savedName) document.getElementById('custName').value = savedName;
+
+    document.getElementById('paymentForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('custEmail').value;
+      const phone = document.getElementById('custPhone').value;
+      const name = document.getElementById('custName').value;
+
+      // Flutterwave Inline Checkout
+      FlutterwaveCheckout({
+        public_key: "FLWPUBK_TEST-SANDBOX-KEY", // Replace with your live or test Flutterwave public key
+        tx_ref: "FC-" + Date.now(),
+        amount: amount,
+        currency: "NGN",
+        payment_options: "card, banktransfer, ussd",
+        customer: {
+          email: email,
+          phone_number: phone,
+          name: name,
+        },
+        customizations: {
+          title: "FeedCoin Investment",
+          description: `Payment for ${plan} plan`,
+          logo: "https://feedcoin.io/logo.jpg",
+        },
+        callback: function (data) {
+          // Success callback: update active capital
+          let currentCap = parseFloat(localStorage.getItem('fc_capital')) || 0;
+          localStorage.setItem('fc_capital', currentCap + amount);
+          alert('Payment successful! Your plan is activated.');
+          window.location.href = 'dashboard.html';
+        },
+        onclose: function () {
+          // Window closed
+        }
+      });
+    });
+  </script>
+</body>
+</html>

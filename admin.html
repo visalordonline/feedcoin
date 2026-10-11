@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FeedCoin || Admin Control Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 0.88rem;
+    }
+    .admin-table th, .admin-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .admin-table th {
+      color: var(--text-muted);
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .badge-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .badge-approved { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .badge-rejected { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    .auth-toggle-btn {
+      background: none;
+      border: none;
+      color: #6c5ce7;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .task-config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+    .task-card-box {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .task-input-row {
+      display: flex;
+      gap: 8px;
+    }
+    .expiry-label {
+      font-size: 0.78rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 2px;
+    }
+    .expiry-active { color: var(--accent-emerald); font-weight: 600; }
+    .expiry-dead { color: #ef4444; font-weight: 600; }
+  </style>
+</head>
+<body class="dash-body">
+
+  <div class="blob blob-purple"></div>
+  <div class="blob blob-emerald"></div>
+
+  <!-- ADMIN AUTH CONTAINER -->
+  <div class="dash-main" id="adminAuthContainer" style="max-width: 440px; margin: 40px auto;">
+    <div class="glass-card section-card">
+      <div style="text-align:center; margin-bottom: 12px;">
+        <span style="font-size: 2.5rem;">🛡️</span>
+        <h2 id="authHeading">Admin Portal Login</h2>
+        <p class="muted" id="authSub">Enter administrative credentials to proceed.</p>
+      </div>
+
+      <form id="adminLoginForm" class="auth-form">
+        <div class="form-group">
+          <label>Admin Email</label>
+          <input type="email" id="adminLogEmail" placeholder="admin@feedcoin.io" required />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="adminLogPass" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn btn-primary w-full">Log In to Admin</button>
+        <p class="muted" style="text-align:center; font-size:0.85rem; margin-top:8px;">
+          Need a new admin account? <button type="button" class="auth-toggle-btn" id="showRegBtn">Create Account</button>
+        </p>
+      </form>
+
+      <form id="adminRegisterForm" class="auth-form hidden">
+        <div class="form-group">
+          <label>Admin Full Name</label>
+          <input type="text" id="adminRegName" placeholder="Super Admin" required />
+        </div>
+        <div class="form-group">
+          <label>Admin Email</label>
+          <input type="email" id="adminRegEmail" placeholder="admin@feedcoin.io" required />
+        </div>
+        <div class="form-group">
+          <label>Secret Master Key</label>
+          <input type="password" id="adminMasterKey" placeholder="Enter key (DEFAULT: ADMIN2026)" required />
+        </div>
+        <div class="form-group">
+          <label>Create Password</label>
+          <input type="password" id="adminRegPass" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn btn-primary w-full">Create Admin Account</button>
+        <p class="muted" style="text-align:center; font-size:0.85rem; margin-top:8px;">
+          Already have an account? <button type="button" class="auth-toggle-btn" id="showLogBtn">Log In</button>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD PANEL -->
+  <div id="adminPanelContainer" class="hidden">
+    <header class="dash-topbar">
+      <div class="dash-topbar-inner">
+        <div class="dash-brand">
+          <span style="font-size:1.4rem;">🛡️</span>
+          <span class="logo">FeedCoin <span>Admin</span></span>
+        </div>
+        <div class="dash-user">
+          <span class="muted" id="activeAdminLabel">Admin: Active</span>
+          <button class="btn btn-ghost btn-sm" id="adminLogoutBtn">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="dash-main" style="max-width: 1050px;">
+      <div class="pane-head" style="margin-bottom: 20px;">
+        <h1>Management Console</h1>
+        <p>Monitor registrations, check user earnings & balances, manage video task codes, and approve withdrawals.</p>
+      </div>
+
+      <div class="stat-grid" style="margin-bottom: 24px;">
+        <div class="glass-card stat">
+          <span>Registered Users</span>
+          <h2 id="totalUsersStat">0</h2>
+        </div>
+        <div class="glass-card stat">
+          <span>Pending Withdrawals</span>
+          <h2 id="pendingWdStat" style="color:#f59e0b;">0</h2>
+        </div>
+        <div class="glass-card stat">
+          <span>Total Capital Invested</span>
+          <h2 id="totalCapitalStat">₦0.00</h2>
+        </div>
+        <div class="glass-card stat">
+          <span>Total Approved Payouts</span>
+          <h2 id="approvedWdStat" style="color:var(--accent-emerald);">₦0.00</h2>
+        </div>
+      </div>
+
+      <!-- ================= VIDEO TASK CODES & 24H EXPIRY ================= -->
+      <div class="glass-card section-card" style="margin-bottom: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div>
+            <h3>🎬 Manage Daily Video Tasks (24-Hour Expiration)</h3>
+            <p class="muted" style="font-size:0.85rem;">Each code is strictly valid for 24 hours from the moment it is generated or saved.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="saveAllTasksBtn">💾 Save Task Changes</button>
+        </div>
+
+        <div class="task-config-grid">
+          <!-- YouTube Configuration -->
+          <div class="task-card-box">
+            <h4 style="color:#ef4444; display:flex; align-items:center; gap:6px;">📺 YouTube Task</h4>
+            <div class="form-group">
+              <label>Target Video Link</label>
+              <input type="url" id="taskLink_yt" placeholder="https://www.youtube.com/@FEEDCOINAPP" />
+            </div>
+            <div class="form-group">
+              <label>Secret Redeem Code</label>
+              <div class="task-input-row">
+                <input type="text" id="taskCode_yt" placeholder="e.g. YT-9382" style="font-weight:700; text-transform:uppercase;" />
+                <button type="button" class="btn btn-ghost btn-sm gen-code-btn" data-platform="yt" title="Generate New 24H Code">🎲 New</button>
+              </div>
+              <div class="expiry-label" id="expiryText_yt">⏳ Validity: 24 Hours</div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm copy-task-btn" data-platform="yt">📋 Copy Link & Code</button>
+          </div>
+
+          <!-- TikTok Configuration -->
+          <div class="task-card-box">
+            <h4 style="color:#38bdf8; display:flex; align-items:center; gap:6px;">🎵 TikTok Task</h4>
+            <div class="form-group">
+              <label>Target Video Link</label>
+              <input type="url" id="taskLink_tt" placeholder="https://tiktok.com/@video/..." />
+            </div>
+            <div class="form-group">
+              <label>Secret Redeem Code</label>
+              <div class="task-input-row">
+                <input type="text" id="taskCode_tt" placeholder="e.g. TT-4819" style="font-weight:700; text-transform:uppercase;" />
+                <button type="button" class="btn btn-ghost btn-sm gen-code-btn" data-platform="tt" title="Generate New 24H Code">🎲 New</button>
+              </div>
+              <div class="expiry-label" id="expiryText_tt">⏳ Validity: 24 Hours</div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm copy-task-btn" data-platform="tt">📋 Copy Link & Code</button>
+          </div>
+
+          <!-- Facebook Configuration -->
+          <div class="task-card-box">
+            <h4 style="color:#6c5ce7; display:flex; align-items:center; gap:6px;">📘 Facebook Task</h4>
+            <div class="form-group">
+              <label>Target Video Link</label>
+              <input type="url" id="taskLink_fb" placeholder="https://www.facebook.com/profile.php?id=..." />
+            </div>
+            <div class="form-group">
+              <label>Secret Redeem Code</label>
+              <div class="task-input-row">
+                <input type="text" id="taskCode_fb" placeholder="e.g. FB-1052" style="font-weight:700; text-transform:uppercase;" />
+                <button type="button" class="btn btn-ghost btn-sm gen-code-btn" data-platform="fb" title="Generate New 24H Code">🎲 New</button>
+              </div>
+              <div class="expiry-label" id="expiryText_fb">⏳ Validity: 24 Hours</div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm copy-task-btn" data-platform="fb">📋 Copy Link & Code</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= WITHDRAWAL APPROVAL DESK ================= -->
+      <div class="glass-card section-card" style="margin-bottom: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3>💳 Withdrawal Requests & Approvals</h3>
+          <span class="muted" style="font-size:0.8rem;">Live Queue</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Req ID</th>
+                <th>User / Email</th>
+                <th>Amount</th>
+                <th>Bank Details</th>
+                <th>KYC Status</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="withdrawalQueueBody">
+              <tr><td colspan="7" class="muted" style="text-align:center;">No withdrawal requests found.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================= USERS & BALANCES MONITOR ================= -->
+      <div class="glass-card section-card">
+        <h3>👥 Registered Users & Live Balances</h3>
+        <div style="overflow-x:auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User Details</th>
+                <th>Account Balance</th>
+                <th>Active Capital</th>
+                <th>Mining / Tasks</th>
+                <th>Linked Bank Account</th>
+                <th>KYC Verification</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="6" class="muted" style="text-align:center;">No registered users recorded.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+      const defaultTasks = {
+        yt: { 
+          link: 'https://www.youtube.com/@FEEDCOINAPP', 
+          code: 'YT2026', 
+          name: 'YouTube',
+          generatedAt: Date.now()
+        },
+        fb: { 
+          link: 'https://www.facebook.com/profile.php?id=61595119085030&mibextid=ZbWKwL', 
+          code: 'FB2026', 
+          name: 'Facebook',
+          generatedAt: Date.now()
+        },
+        tt: { 
+          link: 'https://tiktok.com', 
+          code: 'TIKTOK2026', 
+          name: 'TikTok',
+          generatedAt: Date.now()
+        }
+      };
+
+      const toast = document.getElementById('toast');
+      const formatNaira = (amt) => '₦' + Number(amt || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      
+      function showToast(msg) {
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2800);
+      }
+
+      function getSavedTasks() {
+        return JSON.parse(localStorage.getItem('fc_admin_task_config') || 'null') || defaultTasks;
+      }
+
+      // In-memory timestamps for staging before save
+      let taskTimestamps = {};
+
+      // Admin Auth Elements
+      const adminAuthContainer = document.getElementById('adminAuthContainer');
+      const adminPanelContainer = document.getElementById('adminPanelContainer');
+      const adminLoginForm = document.getElementById('adminLoginForm');
+      const adminRegisterForm = document.getElementById('adminRegisterForm');
+      const showRegBtn = document.getElementById('showRegBtn');
+      const showLogBtn = document.getElementById('showLogBtn');
+      const authHeading = document.getElementById('authHeading');
+      const authSub = document.getElementById('authSub');
+      const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+
+      showRegBtn.addEventListener('click', () => {
+        adminLoginForm.classList.add('hidden');
+        adminRegisterForm.classList.remove('hidden');
+        authHeading.textContent = 'Create Admin Account';
+        authSub.textContent = 'Enter system key and setup admin profile.';
+      });
+
+      showLogBtn.addEventListener('click', () => {
+        adminRegisterForm.classList.add('hidden');
+        adminLoginForm.classList.remove('hidden');
+        authHeading.textContent = 'Admin Portal Login';
+        authSub.textContent = 'Enter administrative credentials to proceed.';
+      });
+
+      adminRegisterForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const masterKey = document.getElementById('adminMasterKey').value.trim();
+        const email = document.getElementById('adminRegEmail').value.trim();
+        const pass = document.getElementById('adminRegPass').value;
+        const name = document.getElementById('adminRegName').value.trim();
+
+        if (masterKey !== 'ADMIN2026') {
+          showToast('Invalid Master Key! Contact root administrator.');
+          return;
+        }
+
+        const admins = JSON.parse(localStorage.getItem('fc_admin_accounts') || '[]');
+        if (admins.find(a => a.email === email)) {
+          showToast('An admin with this email already exists.');
+          return;
+        }
+
+        admins.push({ name, email, pass });
+        localStorage.setItem('fc_admin_accounts', JSON.stringify(admins));
+        showToast('Admin account created! You can now log in.');
+        showLogBtn.click();
+      });
+
+      adminLoginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('adminLogEmail').value.trim();
+        const pass = document.getElementById('adminLogPass').value;
+
+        const admins = JSON.parse(localStorage.getItem('fc_admin_accounts') || '[]');
+        const isValid = (email === 'admin@feedcoin.io' && pass === 'admin123') ||
+                        admins.some(a => a.email === email && a.pass === pass);
+
+        if (isValid) {
+          localStorage.setItem('is_admin_logged', 'true');
+          showAdminPanel();
+          showToast('Welcome, Administrator!');
+        } else {
+          showToast('Invalid admin credentials.');
+        }
+      });
+
+      adminLogoutBtn?.addEventListener('click', () => {
+        localStorage.removeItem('is_admin_logged');
+        adminPanelContainer.classList.add('hidden');
+        adminAuthContainer.classList.remove('hidden');
+      });
+
+      function showAdminPanel() {
+        adminAuthContainer.classList.add('hidden');
+        adminPanelContainer.classList.remove('hidden');
+        loadTaskConfiguration();
+        loadAdminDashboardData();
+        setInterval(updateExpiryLabels, 60000); // refresh expiry indicators every minute
+      }
+
+      // ==========================================
+      // VIDEO TASK CONTROLS & 24H EXPIRATION
+      // ==========================================
+      function updateExpiryLabels() {
+        const tasks = getSavedTasks();
+        ['yt', 'tt', 'fb'].forEach(platform => {
+          const label = document.getElementById(`expiryText_${platform}`);
+          if (!label) return;
+
+          const genAt = taskTimestamps[platform] || tasks[platform]?.generatedAt || Date.now();
+          const elapsed = Date.now() - genAt;
+          const remaining = TWENTY_FOUR_HOURS - elapsed;
+
+          if (remaining <= 0) {
+            label.className = 'expiry-label expiry-dead';
+            label.innerHTML = '⚠️ Code Expired! Generate a new one.';
+          } else {
+            const hrs = Math.floor(remaining / (1000 * 60 * 60));
+            const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+            label.className = 'expiry-label expiry-active';
+            label.innerHTML = `🟢 Valid for: ${hrs}h ${mins}m remaining`;
+          }
+        });
+      }
+
+      function loadTaskConfiguration() {
+        const tasks = getSavedTasks();
+        ['yt', 'tt', 'fb'].forEach(platform => {
+          const linkInput = document.getElementById(`taskLink_${platform}`);
+          const codeInput = document.getElementById(`taskCode_${platform}`);
+          if (linkInput && tasks[platform]) linkInput.value = tasks[platform].link || '';
+          if (codeInput && tasks[platform]) codeInput.value = tasks[platform].code || '';
+          taskTimestamps[platform] = tasks[platform]?.generatedAt || Date.now();
+        });
+        updateExpiryLabels();
+      }
+
+      // Generate button sets fresh code & resets 24-hr timer
+      document.querySelectorAll('.gen-code-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const platform = btn.dataset.platform;
+          const randomNum = Math.floor(1000 + Math.random() * 9000);
+          const newCode = `${platform.toUpperCase()}-${randomNum}`;
+          const input = document.getElementById(`taskCode_${platform}`);
+          if (input) input.value = newCode;
+
+          // Fresh 24h timer stamp
+          taskTimestamps[platform] = Date.now();
+          updateExpiryLabels();
+          showToast(`Generated new code: ${newCode} (24h timer started)`);
+        });
+      });
+
+      document.querySelectorAll('.copy-task-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const platform = btn.dataset.platform;
+          const link = document.getElementById(`taskLink_${platform}`).value.trim();
+          const code = document.getElementById(`taskCode_${platform}`).value.trim();
+          const text = `Watch video here: ${link}\nRedeem Code: ${code}\n(Valid for 24 hours only)`;
+          navigator.clipboard.writeText(text).then(() => {
+            showToast(`Copied ${platform.toUpperCase()} link & code to clipboard!`);
+          });
+        });
+      });
+
+      document.getElementById('saveAllTasksBtn')?.addEventListener('click', () => {
+        const tasks = {
+          yt: {
+            link: document.getElementById('taskLink_yt').value.trim() || defaultTasks.yt.link,
+            code: document.getElementById('taskCode_yt').value.trim().toUpperCase() || 'YT2026',
+            name: 'YouTube',
+            generatedAt: taskTimestamps.yt || Date.now()
+          },
+          tt: {
+            link: document.getElementById('taskLink_tt').value.trim() || defaultTasks.tt.link,
+            code: document.getElementById('taskCode_tt').value.trim().toUpperCase() || 'TIKTOK2026',
+            name: 'TikTok',
+            generatedAt: taskTimestamps.tt || Date.now()
+          },
+          fb: {
+            link: document.getElementById('taskLink_fb').value.trim() || defaultTasks.fb.link,
+            code: document.getElementById('taskCode_fb').value.trim().toUpperCase() || 'FB2026',
+            name: 'Facebook',
+            generatedAt: taskTimestamps.fb || Date.now()
+          }
+        };
+
+        localStorage.setItem('fc_admin_task_config', JSON.stringify(tasks));
+        updateExpiryLabels();
+        showToast('Video tasks and 24-hour codes saved successfully!');
+      });
+
+      // ==========================================
+      // USERS, EARNINGS & WITHDRAWALS LOGIC
+      // ==========================================
+      function loadAdminDashboardData() {
+        let users = JSON.parse(localStorage.getItem('fc_registered_users') || '[]');
+        const bankData = JSON.parse(localStorage.getItem('fc_user_bank') || 'null');
+        const kycData = JSON.parse(localStorage.getItem('fc_kyc_data') || 'null');
+        const usersBody = document.getElementById('usersTableBody');
+        
+        const activeName = localStorage.getItem('user_name') || 'Alex Rivers';
+        const activeEmail = localStorage.getItem('user_email') || 'alex@feedcoin.io';
+        const liveBalance = parseFloat(localStorage.getItem('fc_balance')) || 50000;
+        const liveCapital = parseFloat(localStorage.getItem('fc_capital')) || 0;
+        const liveMining = parseFloat(localStorage.getItem('fc_mining_earned')) || 0;
+        const liveTask = parseFloat(localStorage.getItem('fc_task_earned')) || 0;
+
+        if (users.length === 0) {
+          users.push({
+            name: activeName,
+            email: activeEmail,
+            balance: liveBalance,
+            capital: liveCapital,
+            mining: liveMining,
+            task: liveTask
+          });
+        }
+
+        let totalCapital = 0;
+        usersBody.innerHTML = '';
+
+        users.forEach(u => {
+          const bal = (u.email === activeEmail) ? liveBalance : Number(u.balance || 0);
+          const cap = (u.email === activeEmail) ? liveCapital : Number(u.capital || 0);
+          const min = (u.email === activeEmail) ? liveMining : Number(u.mining || 0);
+          const tsk = (u.email === activeEmail) ? liveTask : Number(u.task || 0);
+
+          totalCapital += cap;
+
+          const tr = document.createElement('tr');
+          const isVerified = kycData && kycData.isVerified;
+          const kycTag = isVerified
+            ? `<span class="status-badge badge-approved">Verified ✓ (${kycData.docType})</span>`
+            : `<span class="status-badge badge-rejected">Unverified ✗</span>`;
+          
+          const accountDisplay = bankData ? `<strong>${bankData.bankName}</strong><br/>${bankData.accountNumber}<br/><small class="muted">${bankData.accountHolder}</small>` : '<span class="muted">Not linked</span>';
+
+          tr.innerHTML = `
+            <td><strong>${u.name}</strong><br/><small class="muted">${u.email}</small></td>
+            <td><strong style="color:var(--accent-emerald); font-size:1rem;">${formatNaira(bal)}</strong></td>
+            <td><strong>${formatNaira(cap)}</strong></td>
+            <td>⛏️ ${formatNaira(min)}<br/>🎬 ${formatNaira(tsk)}</td>
+            <td>${accountDisplay}</td>
+            <td>${kycTag}</td>
+          `;
+          usersBody.appendChild(tr);
+        });
+
+        document.getElementById('totalUsersStat').textContent = users.length;
+        document.getElementById('totalCapitalStat').textContent = formatNaira(totalCapital);
+
+        renderWithdrawalsTable();
+      }
+
+      function renderWithdrawalsTable() {
+        const requests = JSON.parse(localStorage.getItem('fc_admin_withdrawal_requests') || '[]');
+        const queueBody = document.getElementById('withdrawalQueueBody');
+        queueBody.innerHTML = '';
+
+        let pendingCount = 0;
+        let approvedTotal = 0;
+
+        if (requests.length === 0) {
+          queueBody.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center;">No withdrawal requests found.</td></tr>';
+        } else {
+          requests.forEach((req, idx) => {
+            if (req.status === 'Pending') pendingCount++;
+            if (req.status === 'Approved') approvedTotal += Number(req.amount || 0);
+
+            const tr = document.createElement('tr');
+            const badgeClass = req.status === 'Approved' ? 'badge-approved' : req.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
+            const kycLabel = req.isKycVerified ? 'Verified ✓' : 'Unverified ⚠️';
+
+            let actionButtons = '-';
+            if (req.status === 'Pending') {
+              actionButtons = `
+                <button class="btn btn-primary btn-sm" onclick="handleWithdrawalDecision(${idx}, 'Approved')">Approve</button>
+                <button class="btn btn-ghost btn-sm" style="color:#ef4444;" onclick="handleWithdrawalDecision(${idx}, 'Rejected')">Reject</button>
+              `;
+            }
+
+            tr.innerHTML = `
+              <td>#${req.id}</td>
+              <td>${req.userName}<br/><small class="muted">${req.userEmail}</small></td>
+              <td><strong>${formatNaira(req.amount)}</strong></td>
+              <td>${req.bankName}<br/><strong>${req.accountNumber}</strong><br/><small class="muted">${req.accountHolder}</small></td>
+              <td><span style="font-size:0.8rem;">${kycLabel}</span></td>
+              <td><span class="status-badge ${badgeClass}">${req.status}</span></td>
+              <td>${actionButtons}</td>
+            `;
+            queueBody.appendChild(tr);
+          });
+        }
+
+        document.getElementById('pendingWdStat').textContent = pendingCount;
+        document.getElementById('approvedWdStat').textContent = formatNaira(approvedTotal);
+      }
+
+      window.handleWithdrawalDecision = (index, status) => {
+        let requests = JSON.parse(localStorage.getItem('fc_admin_withdrawal_requests') || '[]');
+        if (!requests[index]) return;
+
+        requests[index].status = status;
+        localStorage.setItem('fc_admin_withdrawal_requests', JSON.stringify(requests));
+
+        let userHistory = JSON.parse(localStorage.getItem('fc_withdrawals_history') || '[]');
+        const reqId = requests[index].id;
+        const target = userHistory.find(h => h.id === reqId);
+        if (target) {
+          target.status = status;
+          localStorage.setItem('fc_withdrawals_history', JSON.stringify(userHistory));
+        }
+
+        showToast(`Withdrawal #${reqId} was ${status.toLowerCase()}!`);
+        renderWithdrawalsTable();
+      };
+
+      if (localStorage.getItem('is_admin_logged') === 'true') {
+        showAdminPanel();
+      }
+    });
+  </script>
+</body>
+</html>
