@@ -337,9 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // MANDATORY SUBSCRIPTION & REDEEM LOGIC
-  // ==========================================
-// ==========================================
   // MANDATORY SUBSCRIPTION, 24H EXPIRATION & REDEEM LOGIC
   // ==========================================
   document.querySelectorAll('.task-btn').forEach(btn => {
@@ -404,7 +401,28 @@ document.addEventListener('DOMContentLoaded', () => {
       
       showToast(`${currentConfig.name} daily task complete! +${formatNaira(reward)} added.`);
     });
-  });;
+  });
+
+  // ==========================================
+  // INVESTMENT PACKAGE SUBSCRIPTION
+  // ==========================================
+  document.querySelectorAll('.invest-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const planName = btn.dataset.plan;
+      const amount = parseFloat(btn.dataset.amount);
+
+      if (wallet.balance < amount) {
+        showToast(`Insufficient balance for ${planName}. Please deposit or mine first.`);
+        return;
+      }
+
+      wallet.balance -= amount;
+      wallet.activeCapital += amount;
+      syncUI();
+      if (window.confetti) confetti();
+      showToast(`Successfully subscribed to ${planName} for ${formatNaira(amount)}!`);
+    });
+  });
 
   // Claim Yield
   claimDailyBtn?.addEventListener('click', () => {
