@@ -1,7 +1,7 @@
 // Global Configuration
 const CONFIG = {
   // Put your Flutterwave Public Key here (starts with FLWPUBK_TEST- or FLWPUBK-)
-  FLUTTERWAVE_PUBLIC_KEY: "FLWPUBK_TEST-e4b1bd79f293305ef06b33245aed9617-X",
+  FLUTTERWAVE_PUBLIC_KEY: "FLWPUBK-f93c46950311589724fdb0835ca4381e-X",
   
   // Daily rewards configuration
   MINING_REWARD: 200,        // Updated from 500 to 200
