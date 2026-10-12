@@ -404,23 +404,52 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // INVESTMENT PACKAGE SUBSCRIPTION
+  // FLUTTERWAVE PAYMENT GATEWAY INTEGRATION
   // ==========================================
   document.querySelectorAll('.invest-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const planName = btn.dataset.plan;
       const amount = parseFloat(btn.dataset.amount);
 
-      if (wallet.balance < amount) {
-        showToast(`Insufficient balance for ${planName}. Please deposit or mine first.`);
+      if (!amount || isNaN(amount)) {
+        showToast('Invalid package amount selected.');
         return;
       }
 
-      wallet.balance -= amount;
-      wallet.activeCapital += amount;
-      syncUI();
-      if (window.confetti) confetti();
-      showToast(`Successfully subscribed to ${planName} for ${formatNaira(amount)}!`);
+      if (typeof FlutterwaveCheckout !== 'function') {
+        showToast('Payment system is loading, please try again in a moment.');
+        return;
+      }
+
+      FlutterwaveCheckout({
+        public_key: CONFIG.FLUTTERWAVE_PUBLIC_KEY,
+        tx_ref: 'FC-' + Date.now() + '-' + Math.floor(Math.random() * 100000),
+        amount: amount,
+        currency: 'NGN',
+        payment_options: 'card, banktransfer, ussd',
+        customer: {
+          email: savedEmail,
+          name: savedName,
+        },
+        customizations: {
+          title: 'FeedCoin Investment',
+          description: `Deposit for ${planName} (${formatNaira(amount)})`,
+          logo: 'logo.jpg',
+        },
+        callback: function (response) {
+          if (response.status === 'successful' || response.status === 'completed') {
+            wallet.activeCapital += amount;
+            syncUI();
+            if (window.confetti) confetti();
+            showToast(`Payment successful! Activated ${planName} for ${formatNaira(amount)}.`);
+          } else {
+            showToast('Transaction was not completed. Please try again.');
+          }
+        },
+        onclose: function () {
+          showToast('Payment window closed.');
+        }
+      });
     });
   });
 
