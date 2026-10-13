@@ -512,7 +512,8 @@
         
         const activeName = localStorage.getItem('user_name') || 'Alex Rivers';
         const activeEmail = localStorage.getItem('user_email') || 'alex@feedcoin.io';
-        const liveBalance = parseFloat(localStorage.getItem('fc_balance')) || 50000;
+        const storedBalance = parseFloat(localStorage.getItem('fc_balance'));
+        const liveBalance = isNaN(storedBalance) ? 0 : storedBalance;
         const liveCapital = parseFloat(localStorage.getItem('fc_capital')) || 0;
         const liveMining = parseFloat(localStorage.getItem('fc_mining_earned')) || 0;
         const liveTask = parseFloat(localStorage.getItem('fc_task_earned')) || 0;
@@ -594,7 +595,7 @@
             tr.innerHTML = `
               <td>#${req.id}</td>
               <td>${req.userName}<br/><small class="muted">${req.userEmail}</small></td>
-              <td><strong>${formatNaira(req.amount)}</strong></td>
+              <td><strong>${formatNaira(req.amount)}</strong><br/><small class="muted">${req.typeLabel || ''}</small></td>
               <td>${req.bankName}<br/><strong>${req.accountNumber}</strong><br/><small class="muted">${req.accountHolder}</small></td>
               <td><span style="font-size:0.8rem;">${kycLabel}</span></td>
               <td><span class="status-badge ${badgeClass}">${req.status}</span></td>
@@ -623,7 +624,9 @@
           localStorage.setItem('fc_withdrawals_history', JSON.stringify(userHistory));
         }
 
-        showToast(`Withdrawal #${reqId} was ${status.toLowerCase()}!`);
+        showToast(status === 'Rejected'
+          ? `Withdrawal #${reqId} rejected. The money is returned to the user's dashboard.`
+          : `Withdrawal #${reqId} was ${status.toLowerCase()}!`);
         renderWithdrawalsTable();
       };
 

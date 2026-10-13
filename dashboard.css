@@ -241,3 +241,62 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .dash-tabs a { padding: 8px 10px; font-size: 0.85rem; }
   .user-display-name { display: none; }
 }
+
+/* ---------- Daily reward card ---------- */
+.reward-card { background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(108, 92, 231, 0.16)); }
+.reward-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.reward-pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: rgba(148, 163, 184, 0.18);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.reward-pill.active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+.reward-timer-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.reward-timer-row small,
+.reward-totals small { display: block; color: var(--text-muted); font-size: 0.78rem; margin-bottom: 2px; }
+.reward-countdown {
+  font-family: 'Space Grotesk', 'Inter', monospace;
+  font-size: clamp(1.7rem, 9vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.reward-amount-box { text-align: right; }
+.reward-amount-box strong { color: var(--accent-emerald); font-size: 1.2rem; word-break: break-word; }
+.reward-progress { height: 8px; border-radius: 99px; background: var(--card-border); overflow: hidden; }
+.reward-progress-bar { height: 100%; width: 0; border-radius: 99px; background: var(--primary-gradient); transition: width 0.9s linear; }
+.reward-totals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.reward-totals strong { font-size: 1rem; word-break: break-word; }
+.plan-next { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+
+/* ---------- Withdraw actions, warnings, transactions ---------- */
+.withdraw-actions { display: flex; flex-direction: column; gap: 10px; }
+.withdraw-actions .btn { width: 100%; justify-content: center; text-align: center; }
+.warn-box {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.tx-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.tx-chip {
+  border: 1px solid var(--card-border);
+  background: transparent;
+  color: var(--text-muted);
+  padding: 6px 14px;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.tx-chip.active { background: var(--primary-gradient); color: #fff; border-color: transparent; }
+.tx-list { max-height: 520px; overflow-y: auto; }

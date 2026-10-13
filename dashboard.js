@@ -9,12 +9,339 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Wallet State
   let wallet = {
-    balance: parseFloat(localStorage.getItem('fc_balance')) || 50000,
+    yieldBalance: parseFloat(localStorage.getItem('fc_yield_balance')) || 0,
+    taskBalance: parseFloat(localStorage.getItem('fc_task_balance')) || 0,
     activeCapital: parseFloat(localStorage.getItem('fc_capital')) || 0,
     miningEarnings: parseFloat(localStorage.getItem('fc_mining_earned')) || 0,
     taskEarnings: parseFloat(localStorage.getItem('fc_task_earned')) || 0,
     totalYieldEarned: parseFloat(localStorage.getItem('fc_total_yield')) || 0
   };
+
+  // ==========================================
+  // INVESTMENTS & AUTOMATIC DAILY REWARDS
+  // Every investment pays 4.5% of its amount every 24 hours,
+  // counted from the moment that investment was activated.
+  // ==========================================
+  const YIELD_HISTORY_LIMIT = 60;
+  const round2 = (n) => Math.round(n * 100) / 100;
+
+  function loadJSON(key, fallback) {
+    try {
+      const v = JSON.parse(localStorage.getItem(key));
+      return v === null || v === undefined ? fallback : v;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  // One-time migration: split the old single balance into bonus / task buckets
+  if (localStorage.getItem('fc_buckets_v2') !== 'true') {
+    const oldBalance = parseFloat(localStorage.getItem('fc_balance')) || 0;
+    let yb = wallet.totalYieldEarned;
+    let tb = wallet.miningEarnings + wallet.taskEarnings;
+    let excess = yb + tb - oldBalance;
+    if (excess > 0) {
+      const fromYield = Math.min(yb, excess);
+      yb -= fromYield;
+      excess -= fromYield;
+      tb = Math.max(0, tb - excess);
+    }
+    wallet.yieldBalance = yb;
+    wallet.taskBalance = tb;
+    localStorage.setItem('fc_buckets_v2', 'true');
+  }
+
+  let investments = loadJSON('fc_investments', []);
+
+  // One-time migration: users who invested before this update
+  if (investments.length === 0 && wallet.activeCapital > 0) {
+    const lastYield = parseInt(localStorage.getItem('fc_last_yield')) || 0;
+    const start = lastYield || Date.now();
+    investments.push({
+      id: 'INV-legacy',
+      plan: 'Existing Investment',
+      amount: wallet.activeCapital,
+      startedAt: start,
+      lastCreditAt: start,
+      totalPaid: 0
+    });
+    localStorage.setItem('fc_investments', JSON.stringify(investments));
+  }
+
+  // Seed the transaction log once from older data
+  if (localStorage.getItem('fc_tx_seeded') !== 'true') {
+    const seeded = loadJSON('fc_transactions', []);
+    investments.forEach(inv => seeded.push({ id: 'TX-' + inv.id, type: 'invest', title: `Investment • ${inv.plan}`, amount: inv.amount, at: inv.startedAt }));
+    loadJSON('fc_yield_history', []).forEach((h, i) => seeded.push({ id: 'TX-Y' + i + '-' + h.at, type: 'bonus', title: `Daily earning • ${h.plan}`, amount: h.amount, at: h.at }));
+    loadJSON('fc_withdrawals_history', []).forEach(w => seeded.push({ id: 'TX-' + w.id, type: 'withdraw', title: `Withdrawal • ${w.typeLabel || 'Funds'}`, amount: w.amount, wid: w.id, at: Date.parse(w.date) || Date.now() }));
+    localStorage.setItem('fc_transactions', JSON.stringify(seeded.slice(0, 500)));
+    localStorage.setItem('fc_tx_seeded', 'true');
+  }
+
+  function addTransaction(tx) {
+    const list = loadJSON('fc_transactions', []);
+    list.unshift(Object.assign({ id: 'TX-' + Date.now() + '-' + Math.floor(Math.random() * 100000), at: Date.now() }, tx));
+    localStorage.setItem('fc_transactions', JSON.stringify(list.slice(0, 500)));
+  }
+
+  function resolveWithdrawStatus(wid, fallback) {
+    const adminReq = loadJSON('fc_admin_withdrawal_requests', []).find(r => r.id === wid);
+    if (adminReq && adminReq.status) return adminReq.status;
+    const hist = loadJSON('fc_withdrawals_history', []).find(r => r.id === wid);
+    return (hist && hist.status) || fallback || 'Pending';
+  }
+
+  // Rejected withdrawals: give the money (and any ended investment plans) back to the user
+  function processRefunds() {
+    const adminReqs = loadJSON('fc_admin_withdrawal_requests', []);
+    const history = loadJSON('fc_withdrawals_history', []);
+    const refundedIds = [];
+    let totalRefunded = 0;
+
+    adminReqs.forEach(req => {
+      if (req.status !== 'Rejected' || req.refunded) return;
+      if (req.userEmail && req.userEmail !== savedEmail) return;
+
+      const amount = Number(req.amount) || 0;
+      const parts = req.breakdown || null;
+      // Older requests have no breakdown: return the full amount to the withdrawable bonus balance
+      const bonus = parts ? Number(parts.bonus) || 0 : amount;
+      const task = parts ? Number(parts.task) || 0 : 0;
+      const capital = parts ? Number(parts.capital) || 0 : 0;
+
+      wallet.yieldBalance = round2(wallet.yieldBalance + bonus);
+      wallet.taskBalance = round2(wallet.taskBalance + task);
+
+      if (capital > 0) {
+        const snap = Array.isArray(req.investmentsSnapshot) ? req.investmentsSnapshot : [];
+        if (snap.length) {
+          // Resume each plan's 24h countdown from where it was when the withdrawal was requested
+          snap.forEach(s => investments.push({
+            id: s.id,
+            plan: s.plan,
+            amount: s.amount,
+            startedAt: s.startedAt,
+            lastCreditAt: Date.now() + (s.msToNext || 0) - DAY_MS,
+            totalPaid: s.totalPaid || 0
+          }));
+        } else {
+          investments.push({ id: 'INV-restored-' + req.id, plan: 'Restored Investment', amount: capital, startedAt: Date.now(), lastCreditAt: Date.now(), totalPaid: 0 });
+        }
+        saveInvestments();
+      }
+
+      req.refunded = true;
+      const h = history.find(x => x.id === req.id);
+      if (h) h.refunded = true;
+      addTransaction({ type: 'refund', title: `Withdrawal #${req.id} rejected, money returned`, amount: amount });
+      totalRefunded += amount;
+      refundedIds.push(req.id);
+    });
+
+    if (refundedIds.length) {
+      localStorage.setItem('fc_admin_withdrawal_requests', JSON.stringify(adminReqs));
+      localStorage.setItem('fc_withdrawals_history', JSON.stringify(history));
+      syncUI();
+      showToast(`Withdrawal rejected. ${formatNaira(totalRefunded)} has been returned to your dashboard.`);
+    }
+  }
+
+  let txFilter = 'all';
+  const TX_META = {
+    invest:   { icon: '📈', group: 'invest',   color: '#60a5fa', sign: '' },
+    bonus:    { icon: '🎁', group: 'earn',     color: '#10b981', sign: '+' },
+    task:     { icon: '🎬', group: 'earn',     color: '#10b981', sign: '+' },
+    mining:   { icon: '⛏️', group: 'earn',     color: '#10b981', sign: '+' },
+    withdraw: { icon: '💸', group: 'withdraw', color: '#ef4444', sign: '-' },
+    refund:   { icon: '↩️', group: 'withdraw', color: '#10b981', sign: '+' }
+  };
+
+  function renderTransactions() {
+    const el = document.getElementById('txList');
+    if (!el) return;
+    let list = loadJSON('fc_transactions', []).sort((a, b) => b.at - a.at);
+    if (txFilter !== 'all') list = list.filter(t => (TX_META[t.type] || {}).group === txFilter);
+    el.innerHTML = '';
+    if (list.length === 0) {
+      el.innerHTML = '<li class="history-empty muted">No transactions yet.</li>';
+      return;
+    }
+    list.slice(0, 100).forEach(t => {
+      const meta = TX_META[t.type] || { icon: '•', color: 'inherit', sign: '' };
+      let statusHtml = '';
+      if (t.type === 'withdraw') {
+        const status = resolveWithdrawStatus(t.wid);
+        const c = status === 'Approved' ? '#10b981' : status === 'Rejected' ? '#ef4444' : '#f59e0b';
+        statusHtml = ` • <span style="color:${c}; font-weight:600;">${status}</span>`;
+      }
+      const li = document.createElement('li');
+      li.className = 'history-item';
+      li.innerHTML = `
+        <div>
+          <strong>${meta.icon} ${t.title}</strong>
+          <small>${new Date(t.at).toLocaleString()}${statusHtml}</small>
+        </div>
+        <span class="earned-amount" style="color:${meta.color};">${meta.sign}${formatNaira(t.amount)}</span>
+      `;
+      el.appendChild(li);
+    });
+  }
+
+  document.querySelectorAll('.tx-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      txFilter = chip.dataset.filter;
+      document.querySelectorAll('.tx-chip').forEach(c => c.classList.toggle('active', c === chip));
+      renderTransactions();
+    });
+  });
+
+  function saveInvestments() {
+    localStorage.setItem('fc_investments', JSON.stringify(investments));
+  }
+
+  function recalcCapital() {
+    wallet.activeCapital = investments.reduce((sum, inv) => sum + inv.amount, 0);
+  }
+
+  function formatCountdown(ms) {
+    const total = Math.max(0, Math.floor(ms / 1000));
+    const h = String(Math.floor(total / 3600)).padStart(2, '0');
+    const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+    const s = String(total % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  }
+
+  // Credits every 24h period that has passed (also catches up days missed while the user was away)
+  function accrueYield() {
+    const now = Date.now();
+    const log = [];
+    let credited = 0;
+
+    investments.forEach(inv => {
+      const periods = Math.floor((now - inv.lastCreditAt) / DAY_MS);
+      if (periods <= 0) return;
+      const perDay = round2(inv.amount * CONFIG.DAILY_YIELD_RATE);
+      for (let p = 1; p <= periods; p++) {
+        log.push({ plan: inv.plan, amount: perDay, at: inv.lastCreditAt + p * DAY_MS });
+      }
+      inv.lastCreditAt += periods * DAY_MS;
+      inv.totalPaid = round2((inv.totalPaid || 0) + perDay * periods);
+      credited += perDay * periods;
+    });
+
+    if (credited > 0) {
+      credited = round2(credited);
+      wallet.yieldBalance = round2(wallet.yieldBalance + credited);
+      wallet.totalYieldEarned = round2(wallet.totalYieldEarned + credited);
+      log.forEach(entry => addTransaction({ type: 'bonus', title: `Daily earning • ${entry.plan}`, amount: entry.amount, at: entry.at }));
+      saveInvestments();
+      log.sort((a, b) => b.at - a.at);
+      const history = loadJSON('fc_yield_history', []);
+      localStorage.setItem('fc_yield_history', JSON.stringify(log.concat(history).slice(0, YIELD_HISTORY_LIMIT)));
+    }
+    return { credited, count: log.length };
+  }
+
+  function renderRewardPanel() {
+    const perDayTotal = investments.reduce((sum, inv) => sum + inv.amount * CONFIG.DAILY_YIELD_RATE, 0);
+    const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    setText('rewardTotalEarned', formatNaira(wallet.totalYieldEarned));
+    setText('rewardPerDay', formatNaira(perDayTotal));
+
+    // Active plans
+    const plansList = document.getElementById('activePlansList');
+    if (plansList) {
+      plansList.innerHTML = '';
+      if (investments.length === 0) {
+        plansList.innerHTML = '<li class="history-empty muted">You have no active investment yet.</li>';
+      } else {
+        investments.forEach(inv => {
+          const li = document.createElement('li');
+          li.className = 'history-item';
+          const nextAt = inv.lastCreditAt + DAY_MS;
+          li.innerHTML = `
+            <div>
+              <strong>${inv.plan} • ${formatNaira(inv.amount)}</strong>
+              <small>Next reward in <span class="plan-next" data-next-at="${nextAt}">--:--:--</span> • Earned so far ${formatNaira(inv.totalPaid || 0)}</small>
+            </div>
+            <span class="earned-amount" style="color:#10b981;">+${formatNaira(inv.amount * CONFIG.DAILY_YIELD_RATE)}/day</span>
+          `;
+          plansList.appendChild(li);
+        });
+      }
+    }
+
+    // Reward history
+    const historyEl = document.getElementById('yieldHistoryList');
+    if (historyEl) {
+      const history = loadJSON('fc_yield_history', []);
+      historyEl.innerHTML = '';
+      if (history.length === 0) {
+        historyEl.innerHTML = '<li class="history-empty muted">No rewards received yet. Your first reward arrives 24 hours after you invest.</li>';
+      } else {
+        history.forEach(item => {
+          const li = document.createElement('li');
+          li.className = 'history-item';
+          li.innerHTML = `
+            <div>
+              <strong>🎁 Daily reward • ${item.plan}</strong>
+              <small>${new Date(item.at).toLocaleString()}</small>
+            </div>
+            <span class="earned-amount" style="color:#10b981;">+${formatNaira(item.amount)}</span>
+          `;
+          historyEl.appendChild(li);
+        });
+      }
+    }
+    updateRewardCountdowns();
+  }
+
+  function updateRewardCountdowns() {
+    const now = Date.now();
+    document.querySelectorAll('[data-next-at]').forEach(el => {
+      el.textContent = formatCountdown(parseInt(el.dataset.nextAt) - now);
+    });
+
+    const countdownEl = document.getElementById('rewardCountdown');
+    const amountEl = document.getElementById('nextRewardAmount');
+    const barEl = document.getElementById('rewardProgressBar');
+    const pillEl = document.getElementById('rewardStatusPill');
+    const subEl = document.getElementById('rewardSubtext');
+    const hintEl = document.getElementById('yieldNextHint');
+
+    if (investments.length === 0) {
+      if (countdownEl) countdownEl.textContent = '--:--:--';
+      if (amountEl) amountEl.textContent = formatNaira(0);
+      if (barEl) barEl.style.width = '0%';
+      if (pillEl) { pillEl.textContent = 'No active plan'; pillEl.classList.remove('active'); }
+      if (subEl) subEl.textContent = 'Invest in a plan below and receive 4.5% of your capital automatically every 24 hours.';
+      if (hintEl) hintEl.textContent = '4.5% daily earnings';
+      return;
+    }
+
+    const soonest = Math.min(...investments.map(inv => inv.lastCreditAt + DAY_MS));
+    const dueTogether = investments.filter(inv => inv.lastCreditAt + DAY_MS - soonest < 60000);
+    const nextAmount = dueTogether.reduce((sum, inv) => sum + inv.amount * CONFIG.DAILY_YIELD_RATE, 0);
+    const remaining = Math.max(0, soonest - now);
+    const progress = Math.min(100, Math.max(0, 100 - (remaining / DAY_MS) * 100));
+
+    if (countdownEl) countdownEl.textContent = formatCountdown(remaining);
+    if (amountEl) amountEl.textContent = '+' + formatNaira(nextAmount);
+    if (barEl) barEl.style.width = progress.toFixed(2) + '%';
+    if (pillEl) { pillEl.textContent = 'Earning daily'; pillEl.classList.add('active'); }
+    if (subEl) subEl.textContent = 'Your reward is added to your balance automatically. Nothing to claim.';
+    if (hintEl) hintEl.textContent = `Next reward in ${formatCountdown(remaining)}`;
+  }
+
+  function tickRewards() {
+    const result = accrueYield();
+    if (result.credited > 0) {
+      syncUI();
+      if (window.confetti) confetti();
+      showToast(`🎁 Daily reward received: +${formatNaira(result.credited)}`);
+    }
+    updateRewardCountdowns();
+  }
 
   const savedName = localStorage.getItem('user_name') || 'Alex Rivers';
   const savedEmail = localStorage.getItem('user_email') || 'alex@feedcoin.io';
@@ -39,6 +366,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const balanceMining = document.getElementById('balanceMining');
   const balanceTask = document.getElementById('balanceTask');
   const balanceYield = document.getElementById('balanceYield');
+  const balanceBonus = document.getElementById('balanceBonus');
+  const wdCapital = document.getElementById('wdCapital');
+  const wdBonus = document.getElementById('wdBonus');
+  const wdTask = document.getElementById('wdTask');
+  const wdTotal = document.getElementById('wdTotal');
   const activeInvestments = document.getElementById('activeInvestments');
   const dailyYieldDisplay = document.getElementById('dailyYieldDisplay');
   const withdrawTabBalance = document.getElementById('withdrawTabBalance');
@@ -51,7 +383,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const CoinBtn = document.getElementById('CoinBtn');
   const miningBtnText = document.getElementById('miningBtnText');
   const miningCooldownText = document.getElementById('miningCooldownText');
-  const claimDailyBtn = document.getElementById('claimDailyBtn');
 
   // Task Element Mappings
   const taskElements = {
@@ -150,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
         name,
         email,
         joinedAt: new Date().toLocaleDateString(),
-        balance: wallet.balance,
+        balance: wallet.yieldBalance + wallet.taskBalance,
         capital: wallet.activeCapital
       });
       localStorage.setItem('fc_registered_users', JSON.stringify(users));
@@ -161,7 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let users = JSON.parse(localStorage.getItem('fc_registered_users') || '[]');
     const index = users.findIndex(u => u.email === savedEmail);
     if (index !== -1) {
-      users[index].balance = wallet.balance;
+      users[index].balance = wallet.yieldBalance + wallet.taskBalance;
       users[index].capital = wallet.activeCapital;
       users[index].mining = wallet.miningEarnings;
       users[index].task = wallet.taskEarnings;
@@ -192,12 +523,13 @@ document.addEventListener('DOMContentLoaded', () => {
     history.forEach(item => {
       const li = document.createElement('li');
       li.className = 'history-item';
-      const statusColor = item.status === 'Approved' ? '#10b981' : item.status === 'Rejected' ? '#ef4444' : '#f59e0b';
+      const status = resolveWithdrawStatus(item.id, item.status);
+      const statusColor = status === 'Approved' ? '#10b981' : status === 'Rejected' ? '#ef4444' : '#f59e0b';
       
       li.innerHTML = `
         <div>
-          <strong>Withdrawal to ${item.bankName} (${item.accountNumber})</strong>
-          <small>${item.date} • Status: <span style="color:${statusColor}; font-weight:600;">${item.status}</span></small>
+          <strong>${item.typeLabel || "Withdrawal"} • ${item.bankName} (${item.accountNumber})</strong>
+          <small>${item.date} • Status: <span style="color:${statusColor}; font-weight:600;">${status}</span>${status === "Rejected" ? " • money returned to your balance" : ""}</small>
         </div>
         <span class="earned-amount" style="color:#ef4444;">-${formatNaira(item.amount)}</span>
       `;
@@ -234,38 +566,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function calculateWithdrawableBalance() {
-    if (wallet.taskEarnings < CONFIG.TASK_MIN_WITHDRAW) {
-      return Math.max(0, wallet.balance - wallet.taskEarnings);
-    }
-    return wallet.balance;
-  }
-
   function syncUI() {
-    if (totalCoins) totalCoins.textContent = formatNaira(wallet.balance);
-    if (balanceInvested) balanceInvested.textContent = formatNaira(wallet.activeCapital);
-    if (balanceMining) balanceMining.textContent = formatNaira(wallet.miningEarnings);
-    if (balanceTask) balanceTask.textContent = formatNaira(wallet.taskEarnings);
-    if (balanceYield) balanceYield.textContent = formatNaira(wallet.totalYieldEarned);
-    if (activeInvestments) activeInvestments.textContent = formatNaira(wallet.activeCapital);
-    if (dailyYieldDisplay) dailyYieldDisplay.textContent = `+${formatNaira(wallet.activeCapital * CONFIG.DAILY_YIELD_RATE)} / day`;
+    recalcCapital();
+    const setText = (el, value) => { if (el) el.textContent = value; };
+    const totalValue = wallet.activeCapital + wallet.yieldBalance + wallet.taskBalance;
+    const lifetimeEarned = wallet.totalYieldEarned + wallet.miningEarnings + wallet.taskEarnings;
+    const taskLocked = wallet.taskBalance < CONFIG.TASK_MIN_WITHDRAW;
 
-    const withdrawable = calculateWithdrawableBalance();
-    if (withdrawTabBalance) withdrawTabBalance.textContent = formatNaira(withdrawable);
+    setText(totalCoins, formatNaira(totalValue));
+    setText(balanceInvested, formatNaira(wallet.activeCapital));
+    setText(balanceBonus, formatNaira(wallet.yieldBalance));
+    setText(balanceTask, formatNaira(wallet.taskBalance));
+    setText(balanceYield, formatNaira(lifetimeEarned));
+    setText(activeInvestments, formatNaira(wallet.activeCapital));
+    setText(dailyYieldDisplay, `+${formatNaira(wallet.activeCapital * CONFIG.DAILY_YIELD_RATE)} / day`);
 
-    if (wallet.taskEarnings < CONFIG.TASK_MIN_WITHDRAW) {
-      const remaining = CONFIG.TASK_MIN_WITHDRAW - wallet.taskEarnings;
-      if (taskMinNotice) taskMinNotice.textContent = `Locked (${formatNaira(wallet.taskEarnings)} / ${formatNaira(CONFIG.TASK_MIN_WITHDRAW)}). Need ${formatNaira(remaining)} more.`;
-      if (withdrawThresholdHint) withdrawThresholdHint.textContent = `Task balance (${formatNaira(wallet.taskEarnings)}) is locked until reaching ₦2,000.00.`;
+    setText(wdCapital, formatNaira(wallet.activeCapital));
+    setText(wdBonus, formatNaira(wallet.yieldBalance));
+    setText(wdTask, formatNaira(wallet.taskBalance));
+    setText(wdTotal, formatNaira(totalValue));
+
+    if (taskLocked) {
+      const remaining = CONFIG.TASK_MIN_WITHDRAW - wallet.taskBalance;
+      setText(taskMinNotice, `Locked until ${formatNaira(CONFIG.TASK_MIN_WITHDRAW)}. Need ${formatNaira(remaining)} more.`);
+      if (taskMinNotice) taskMinNotice.style.color = '#f59e0b';
+      setText(withdrawThresholdHint, `Locked until ${formatNaira(CONFIG.TASK_MIN_WITHDRAW)} (need ${formatNaira(remaining)} more)`);
+      if (withdrawThresholdHint) withdrawThresholdHint.style.color = '#f59e0b';
     } else {
-      if (taskMinNotice) {
-        taskMinNotice.textContent = 'Unlocked & Withdrawable!';
-        taskMinNotice.style.color = '#10b981';
-      }
-      if (withdrawThresholdHint) withdrawThresholdHint.textContent = '';
+      setText(taskMinNotice, 'Unlocked & withdrawable!');
+      if (taskMinNotice) taskMinNotice.style.color = '#10b981';
+      setText(withdrawThresholdHint, 'Unlocked & withdrawable');
+      if (withdrawThresholdHint) withdrawThresholdHint.style.color = '#10b981';
     }
 
-    localStorage.setItem('fc_balance', wallet.balance);
+    localStorage.setItem('fc_yield_balance', wallet.yieldBalance);
+    localStorage.setItem('fc_task_balance', wallet.taskBalance);
+    localStorage.setItem('fc_balance', wallet.yieldBalance + wallet.taskBalance);
     localStorage.setItem('fc_capital', wallet.activeCapital);
     localStorage.setItem('fc_mining_earned', wallet.miningEarnings);
     localStorage.setItem('fc_task_earned', wallet.taskEarnings);
@@ -277,6 +613,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderBankAccountDisplay();
     checkKycStatus();
     renderPermanentWithdrawalHistory();
+    renderRewardPanel();
+    renderTransactions();
   }
 
   function checkDailyStatus() {
@@ -328,8 +666,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const reward = CONFIG.MINING_REWARD;
-    wallet.balance += reward;
+    wallet.taskBalance += reward;
     wallet.miningEarnings += reward;
+    addTransaction({ type: 'mining', title: 'Mining reward', amount: reward });
     localStorage.setItem('fc_last_mining', Date.now());
     syncUI();
     if (window.confetti) confetti();
@@ -392,8 +731,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Reward Credit
       const reward = CONFIG.TASK_REWARD;
-      wallet.balance += reward;
+      wallet.taskBalance += reward;
       wallet.taskEarnings += reward;
+      addTransaction({ type: 'task', title: `${currentConfig.name} task reward`, amount: reward });
       localStorage.setItem(`fc_last_task_${platform}`, Date.now());
       input.value = '';
       syncUI();
@@ -438,10 +778,20 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         callback: function (response) {
           if (response.status === 'successful' || response.status === 'completed') {
-            wallet.activeCapital += amount;
+            const now = Date.now();
+            investments.push({
+              id: 'INV-' + now,
+              plan: planName,
+              amount: amount,
+              startedAt: now,
+              lastCreditAt: now,
+              totalPaid: 0
+            });
+            saveInvestments();
+            addTransaction({ type: 'invest', title: `Investment • ${planName}`, amount: amount });
             syncUI();
             if (window.confetti) confetti();
-            showToast(`Payment successful! Activated ${planName} for ${formatNaira(amount)}.`);
+            showToast(`Payment successful! ${planName} is active. Your first daily reward arrives in 24 hours.`);
           } else {
             showToast('Transaction was not completed. Please try again.');
           }
@@ -451,25 +801,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
-  });
-
-  // Claim Yield
-  claimDailyBtn?.addEventListener('click', () => {
-    if (wallet.activeCapital <= 0) {
-      showToast('No active investment plan running.');
-      return;
-    }
-    const lastYield = parseInt(localStorage.getItem('fc_last_yield')) || 0;
-    if (Date.now() - lastYield < DAY_MS) {
-      showToast('Daily yield already claimed today!');
-      return;
-    }
-    const yieldAmount = wallet.activeCapital * CONFIG.DAILY_YIELD_RATE;
-    wallet.balance += yieldAmount;
-    wallet.totalYieldEarned += yieldAmount;
-    localStorage.setItem('fc_last_yield', Date.now());
-    syncUI();
-    showToast(`Claimed +${formatNaira(yieldAmount)} yield!`);
   });
 
   // Bank Info Functions
@@ -482,7 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bank = getSavedBank();
     if (bank && savedAccountBox && savedAccountDisplay) {
       savedAccountBox.classList.remove('hidden');
-      savedAccountDisplay.textContent = `${bank.bankName} || ${bank.accountNumber} (${bank.accountHolder})`;
+      savedAccountDisplay.textContent = `${bank.bankName} • ${bank.accountNumber} (${bank.accountHolder})`;
     }
     if (profileBankDetails) {
       if (bank) {
@@ -493,58 +824,113 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Withdraw Amount Modal Handlers
-  withdrawAllBtn?.addEventListener('click', () => {
-    const withdrawable = calculateWithdrawableBalance();
-    if (withdrawable <= 0) {
-      showToast('You do not have any withdrawable balance right now.');
+  // ==========================================
+  // WITHDRAWALS: Investment Bonus / Task Reward / Withdraw All
+  // Bank details are asked for ONCE. After that only an amount (or a confirmation) is needed.
+  // ==========================================
+  const MIN_WITHDRAW = 500;
+  const WITHDRAW_LABELS = { all: 'Withdraw All', bonus: 'Investment Bonus', task: 'Task Reward' };
+  const withdrawBonusBtn = document.getElementById('withdrawBonusBtn');
+  const withdrawTaskBtn = document.getElementById('withdrawTaskBtn');
+  const withdrawModalTitle = document.getElementById('withdrawModalTitle');
+  const modalAvailableLabel = document.getElementById('modalAvailableLabel');
+  const withdrawAllModal = document.getElementById('withdrawAllModal');
+  const withdrawAllSummary = document.getElementById('withdrawAllSummary');
+  const withdrawAllWarning = document.getElementById('withdrawAllWarning');
+  let pendingAfterBank = null;
+  let currentWithdrawType = 'bonus';
+
+  const taskUnlocked = () => wallet.taskBalance >= CONFIG.TASK_MIN_WITHDRAW;
+
+  function requireBank(next) {
+    if (getSavedBank()) { next(); return; }
+    pendingAfterBank = next;
+    showToast('Add your bank account once. You will not be asked again.');
+    bankForm?.reset();
+    bankModal?.classList.remove('hidden');
+  }
+
+  function getWithdrawAllBreakdown() {
+    const capital = wallet.activeCapital;
+    const bonus = wallet.yieldBalance;
+    const task = taskUnlocked() ? wallet.taskBalance : 0;
+    return { capital, bonus, task, total: round2(capital + bonus + task) };
+  }
+
+  function openAmountModal(type) {
+    if (type === 'task' && !taskUnlocked()) {
+      showToast(`Task rewards unlock at ${formatNaira(CONFIG.TASK_MIN_WITHDRAW)}. You currently have ${formatNaira(wallet.taskBalance)}.`);
       return;
     }
-
+    const available = type === 'bonus' ? wallet.yieldBalance : wallet.taskBalance;
+    if (available < MIN_WITHDRAW) {
+      showToast(`Minimum withdrawal is ${formatNaira(MIN_WITHDRAW)}. You currently have ${formatNaira(available)}.`);
+      return;
+    }
+    currentWithdrawType = type;
     const bank = getSavedBank();
-    if (!bank) {
-      showToast('Please set up your linked bank account first.');
-      bankModal?.classList.remove('hidden');
-      return;
-    }
-
-    if (modalAvailableBal) modalAvailableBal.value = formatNaira(withdrawable);
+    if (withdrawModalTitle) withdrawModalTitle.textContent = type === 'bonus' ? 'Withdraw Investment Bonus' : 'Withdraw Task Reward';
+    if (modalAvailableLabel) modalAvailableLabel.textContent = type === 'bonus' ? 'Available Investment Bonus' : 'Available Task Reward';
+    if (modalAvailableBal) modalAvailableBal.value = formatNaira(available);
+    const payingTo = document.getElementById('withdrawToLine');
+    if (payingTo && bank) payingTo.value = `${bank.bankName} • ${bank.accountNumber} (${bank.accountHolder})`;
     if (withdrawAmountInput) {
-      withdrawAmountInput.max = withdrawable;
+      withdrawAmountInput.max = available;
       withdrawAmountInput.value = '';
     }
     withdrawAmountModal?.classList.remove('hidden');
-  });
+  }
 
-  closeWithdrawModal?.addEventListener('click', () => withdrawAmountModal?.classList.add('hidden'));
-
-  withdrawAmountForm?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const amount = parseFloat(withdrawAmountInput.value);
-    const withdrawable = calculateWithdrawableBalance();
-
-    if (!amount || isNaN(amount) || amount <= 0) {
-      showToast('Please enter a valid amount.');
+  function openWithdrawAllModal() {
+    const b = getWithdrawAllBreakdown();
+    if (b.total < MIN_WITHDRAW) {
+      showToast(`Minimum withdrawal is ${formatNaira(MIN_WITHDRAW)}. You currently have ${formatNaira(b.total)}.`);
       return;
     }
-
-    if (amount > withdrawable) {
-      showToast(`Amount exceeds available withdrawable balance of ${formatNaira(withdrawable)}`);
-      return;
+    const row = (label, value, note) => `
+      <li class="history-item">
+        <div><strong>${label}</strong>${note ? `<small>${note}</small>` : ''}</div>
+        <span class="earned-amount">${formatNaira(value)}</span>
+      </li>`;
+    let rows = row('Invested capital', b.capital) + row('Investment bonus', b.bonus);
+    if (taskUnlocked()) {
+      rows += row('Task & mining rewards', b.task);
+    } else if (wallet.taskBalance > 0) {
+      rows += row('Task & mining rewards', 0, `${formatNaira(wallet.taskBalance)} stays locked until ${formatNaira(CONFIG.TASK_MIN_WITHDRAW)}`);
     }
+    rows += row('Total to withdraw', b.total);
+    if (withdrawAllSummary) withdrawAllSummary.innerHTML = rows;
+    if (withdrawAllWarning) withdrawAllWarning.style.display = b.capital > 0 ? 'block' : 'none';
+    withdrawAllModal?.classList.remove('hidden');
+  }
 
+  function submitWithdrawal(type, amount, parts) {
     const bank = getSavedBank();
-    const kycRaw = localStorage.getItem('fc_kyc_data');
-    let kycData = kycRaw ? JSON.parse(kycRaw) : null;
+    if (!bank) {
+      showToast('Please add your bank account first.');
+      bankModal?.classList.remove('hidden');
+      return;
+    }
+    const kycData = loadJSON('fc_kyc_data', null);
 
-    wallet.balance -= amount;
-    syncUI();
+    wallet.yieldBalance = Math.max(0, round2(wallet.yieldBalance - parts.bonus));
+    wallet.taskBalance = Math.max(0, round2(wallet.taskBalance - parts.task));
+    let snapshot = [];
+    if (type === 'all') {
+      snapshot = investments.map(inv => Object.assign({}, inv, { msToNext: Math.max(0, inv.lastCreditAt + DAY_MS - Date.now()) }));
+      investments = [];
+      saveInvestments();
+    }
 
-    const withdrawalRequest = {
+    const record = {
       id: 'WD-' + Date.now().toString().slice(-6),
       userName: savedName,
       userEmail: savedEmail,
       amount: amount,
+      type: type,
+      typeLabel: WITHDRAW_LABELS[type],
+      breakdown: parts,
+      investmentsSnapshot: snapshot,
       bankName: bank.bankName,
       accountNumber: bank.accountNumber,
       accountHolder: bank.accountHolder,
@@ -553,16 +939,67 @@ document.addEventListener('DOMContentLoaded', () => {
       isKycVerified: !!(kycData && kycData.isVerified)
     };
 
-    saveWithdrawalRecord(withdrawalRequest);
-
-    let adminRequests = JSON.parse(localStorage.getItem('fc_admin_withdrawal_requests') || '[]');
-    adminRequests.unshift(withdrawalRequest);
+    saveWithdrawalRecord(record);
+    const adminRequests = loadJSON('fc_admin_withdrawal_requests', []);
+    adminRequests.unshift(record);
     localStorage.setItem('fc_admin_withdrawal_requests', JSON.stringify(adminRequests));
+    addTransaction({ type: 'withdraw', title: `Withdrawal • ${WITHDRAW_LABELS[type]}`, amount: amount, wid: record.id });
 
     withdrawAmountModal?.classList.add('hidden');
-    renderPermanentWithdrawalHistory();
+    withdrawAllModal?.classList.add('hidden');
+    syncUI();
 
-    showToast('Withdrawal submitted to admin! You will receive your payment immediately admin approves it.');
+    showToast(type === 'all'
+      ? 'Withdrawal submitted. Your investment plans have ended. Payment comes as soon as admin approves.'
+      : 'Withdrawal submitted to admin! You will receive your payment as soon as admin approves it.');
+  }
+
+  withdrawBonusBtn?.addEventListener('click', () => requireBank(() => openAmountModal('bonus')));
+  withdrawTaskBtn?.addEventListener('click', () => requireBank(() => openAmountModal('task')));
+  withdrawAllBtn?.addEventListener('click', () => {
+    const b = getWithdrawAllBreakdown();
+    if (b.total < MIN_WITHDRAW) {
+      showToast(`Minimum withdrawal is ${formatNaira(MIN_WITHDRAW)}. You currently have ${formatNaira(b.total)}.`);
+      return;
+    }
+    requireBank(openWithdrawAllModal);
+  });
+
+  document.getElementById('confirmWithdrawAll')?.addEventListener('click', () => {
+    const b = getWithdrawAllBreakdown();
+    if (b.total < MIN_WITHDRAW) {
+      showToast(`Minimum withdrawal is ${formatNaira(MIN_WITHDRAW)}.`);
+      return;
+    }
+    submitWithdrawal('all', b.total, b);
+  });
+  document.getElementById('cancelWithdrawAll')?.addEventListener('click', () => withdrawAllModal?.classList.add('hidden'));
+  document.getElementById('closeWithdrawAllModal')?.addEventListener('click', () => withdrawAllModal?.classList.add('hidden'));
+  closeWithdrawModal?.addEventListener('click', () => withdrawAmountModal?.classList.add('hidden'));
+
+  withdrawAmountForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const type = currentWithdrawType;
+    const available = type === 'bonus' ? wallet.yieldBalance : wallet.taskBalance;
+    const amount = round2(parseFloat(withdrawAmountInput.value));
+
+    if (!amount || isNaN(amount) || amount <= 0) {
+      showToast('Please enter a valid amount.');
+      return;
+    }
+    if (amount < MIN_WITHDRAW) {
+      showToast(`Minimum withdrawal is ${formatNaira(MIN_WITHDRAW)}.`);
+      return;
+    }
+    if (amount > available) {
+      showToast(`Amount exceeds your available balance of ${formatNaira(available)}`);
+      return;
+    }
+    submitWithdrawal(type, amount, {
+      capital: 0,
+      bonus: type === 'bonus' ? amount : 0,
+      task: type === 'task' ? amount : 0
+    });
   });
 
   editBankBtn?.addEventListener('click', () => {
@@ -575,7 +1012,10 @@ document.addEventListener('DOMContentLoaded', () => {
     bankModal?.classList.remove('hidden');
   });
 
-  closeBankModal?.addEventListener('click', () => bankModal?.classList.add('hidden'));
+  closeBankModal?.addEventListener('click', () => {
+    pendingAfterBank = null;
+    bankModal?.classList.add('hidden');
+  });
 
   bankForm?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -593,7 +1033,14 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('fc_user_bank', JSON.stringify(bankData));
     bankModal?.classList.add('hidden');
     renderBankAccountDisplay();
-    showToast('Bank details saved! You can now request your withdrawal.');
+    if (pendingAfterBank) {
+      const next = pendingAfterBank;
+      pendingAfterBank = null;
+      showToast('Bank details saved!');
+      next();
+    } else {
+      showToast('Bank details saved!');
+    }
   });
 
   // Tab Navigation
@@ -621,5 +1068,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'index.html';
   });
 
+  processRefunds();
   syncUI();
+  tickRewards();
+  window.addEventListener('storage', (e) => {
+    if (!e.key || e.key === 'fc_admin_withdrawal_requests') processRefunds();
+  });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) processRefunds(); });
+  setInterval(tickRewards, 1000);
 });

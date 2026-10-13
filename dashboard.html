@@ -88,43 +88,56 @@
     <section class="dashboard-tab-pane active" id="tab-balance">
       <div class="pane-head">
         <h1>All Balances</h1>
-        <p>Real-time breakdown of all balances across your account.</p>
+        <p>Your invested capital, investment bonus and task rewards in one place.</p>
       </div>
 
       <div class="glass-card balance-hero">
-        <span>Total Available Account Balance</span>
+        <span>Total Account Value</span>
         <h2 id="totalCoins">₦0.00</h2>
       </div>
 
       <div class="stat-grid">
         <div class="glass-card stat">
-          <span>Active Invested Capital</span>
+          <span>Invested Capital</span>
           <h2 id="balanceInvested">₦0.00</h2>
           <small>Capital generating daily returns</small>
         </div>
 
         <div class="glass-card stat">
-          <span>Mining Balance</span>
-          <h2 id="balanceMining">₦0.00</h2>
-          <small>Accumulated from daily taps</small>
+          <span>Investment Bonus</span>
+          <h2 id="balanceBonus">₦0.00</h2>
+          <small id="yieldNextHint">4.5% daily earnings</small>
         </div>
 
         <div class="glass-card stat">
-          <span>Daily Task Balance</span>
+          <span>Task &amp; Mining Rewards</span>
           <h2 id="balanceTask">₦0.00</h2>
           <small id="taskMinNotice" style="color:#f59e0b;">Min. withdrawal: ₦2,000.00</small>
         </div>
 
         <div class="glass-card stat">
-          <span>Accumulated Yield</span>
+          <span>Total Earned (All Time)</span>
           <h2 id="balanceYield">₦0.00</h2>
-          <small>4.5% daily earnings</small>
+          <small>Bonus + tasks + mining</small>
         </div>
       </div>
 
       <div class="quick-actions">
         <a href="#" class="btn btn-primary tab-link" data-tab="tab-invest">Invest More</a>
         <a href="#" class="btn btn-ghost tab-link" data-tab="tab-withdraw">Withdraw Funds</a>
+      </div>
+
+      <div class="glass-card section-card">
+        <h3>🧾 Transaction History</h3>
+        <div class="tx-filters" id="txFilters">
+          <button type="button" class="tx-chip active" data-filter="all">All</button>
+          <button type="button" class="tx-chip" data-filter="invest">Investments</button>
+          <button type="button" class="tx-chip" data-filter="earn">Earnings</button>
+          <button type="button" class="tx-chip" data-filter="withdraw">Withdrawals</button>
+        </div>
+        <ul class="history-list tx-list" id="txList">
+          <li class="history-empty muted">No transactions yet.</li>
+        </ul>
       </div>
     </section>
 
@@ -229,8 +242,55 @@
         <div class="glass-card stat">
           <span>Daily Yield Rate (4.5%)</span>
           <h2 id="dailyYieldDisplay">+₦0.00 / day</h2>
-          <button class="btn btn-primary btn-sm" id="claimDailyBtn" style="margin-top:8px;">Claim Yield</button>
+          <small>Paid automatically every 24 hours</small>
         </div>
+      </div>
+
+      <!-- DAILY REWARD (auto-credited every 24h) -->
+      <div class="glass-card section-card reward-card" id="dailyRewardCard">
+        <div class="reward-head">
+          <h3>🎁 Daily Reward</h3>
+          <span class="reward-pill" id="rewardStatusPill">No active plan</span>
+        </div>
+        <p class="muted" id="rewardSubtext">Invest in a plan below and receive 4.5% of your capital automatically every 24 hours.</p>
+
+        <div class="reward-timer-row">
+          <div>
+            <small>Next reward in</small>
+            <div class="reward-countdown" id="rewardCountdown">--:--:--</div>
+          </div>
+          <div class="reward-amount-box">
+            <small>Next reward</small>
+            <strong id="nextRewardAmount">₦0.00</strong>
+          </div>
+        </div>
+
+        <div class="reward-progress" aria-hidden="true"><div class="reward-progress-bar" id="rewardProgressBar"></div></div>
+
+        <div class="reward-totals">
+          <div>
+            <small>Total earned from rewards</small>
+            <strong id="rewardTotalEarned">₦0.00</strong>
+          </div>
+          <div>
+            <small>Rewards per day</small>
+            <strong id="rewardPerDay">₦0.00</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card section-card">
+        <h3>📌 My Active Plans</h3>
+        <ul class="history-list" id="activePlansList">
+          <li class="history-empty muted">You have no active investment yet.</li>
+        </ul>
+      </div>
+
+      <div class="glass-card section-card">
+        <h3>🧾 Reward History</h3>
+        <ul class="history-list" id="yieldHistoryList">
+          <li class="history-empty muted">No rewards received yet. Your first reward arrives 24 hours after you invest.</li>
+        </ul>
       </div>
 
       <!-- 1. STARTER PACKAGES -->
@@ -282,7 +342,7 @@
           </div>
           <div class="plan-card">
             <h4>FeedCoin Pro</h4>
-            <div class="plan-return">₦30,0000</div>
+            <div class="plan-return">₦300,000</div>
             <span class="daily-badge">+₦13,500 / day</span>
             <button class="btn btn-primary invest-btn" data-plan="FeedCoin Pro" data-amount="300000">Invest Now</button>
           </div>
@@ -337,23 +397,44 @@
     <section class="dashboard-tab-pane" id="tab-withdraw">
       <div class="pane-head">
         <h1>Withdraw Funds</h1>
-        <p>Request funds transfer straight to your linked bank account.</p>
+        <p>Choose what you want to withdraw. Your bank account is saved once, after that you only confirm or enter an amount.</p>
       </div>
 
-      <div class="glass-card balance-hero">
-        <span>Withdrawable Account Balance</span>
-        <h2 id="withdrawTabBalance">₦0.00</h2>
-        <small id="withdrawThresholdHint" class="muted" style="color:#f59e0b;"></small>
+      <div class="stat-grid">
+        <div class="glass-card stat">
+          <span>Invested Capital</span>
+          <h2 id="wdCapital">₦0.00</h2>
+          <small>Only paid out with "Withdraw All"</small>
+        </div>
+        <div class="glass-card stat">
+          <span>Investment Bonus</span>
+          <h2 id="wdBonus">₦0.00</h2>
+          <small>Daily earnings, withdraw anytime</small>
+        </div>
+        <div class="glass-card stat">
+          <span>Task &amp; Mining Rewards</span>
+          <h2 id="wdTask">₦0.00</h2>
+          <small id="withdrawThresholdHint" style="color:#f59e0b;"></small>
+        </div>
+        <div class="glass-card stat">
+          <span>Total Balance</span>
+          <h2 id="wdTotal">₦0.00</h2>
+          <small>Capital + bonus + rewards</small>
+        </div>
       </div>
 
       <div class="glass-card section-card">
         <h3>Bank Transfer Payout</h3>
-        <div id="savedAccountBox" class="stat hidden" style="margin-bottom:12px; border:1px solid var(--card-border); border-radius:12px; padding:12px;">
+        <div id="savedAccountBox" class="stat hidden" style="margin-bottom:4px; border:1px solid var(--card-border); border-radius:12px; padding:12px;">
           <span>Linked Bank Account</span>
           <strong id="savedAccountDisplay">No account linked</strong>
           <button class="btn btn-ghost btn-sm" id="editBankBtn" style="margin-top:6px; align-self: flex-start;">Change Details</button>
         </div>
-        <button class="btn btn-primary w-full" id="withdrawAllBtn">Request Withdrawal</button>
+        <div class="withdraw-actions">
+          <button class="btn btn-primary" id="withdrawBonusBtn">💰 Withdraw Investment Bonus</button>
+          <button class="btn btn-primary" id="withdrawTaskBtn">🎬 Withdraw Task Reward</button>
+          <button class="btn btn-ghost" id="withdrawAllBtn">🏦 Withdraw All (incl. Capital)</button>
+        </div>
       </div>
 
       <div class="glass-card section-card">
@@ -436,23 +517,47 @@
       <button class="modal-close" id="closeWithdrawModal">&times;</button>
       <div style="text-align:center; margin-bottom:12px;">
         <span style="font-size:2.4rem;">💸</span>
-        <h3>Withdraw Funds</h3>
+        <h3 id="withdrawModalTitle">Withdraw Funds</h3>
         <p class="muted" style="font-size:0.85rem;">Enter the amount you wish to withdraw.</p>
       </div>
       <form id="withdrawAmountForm" class="auth-form">
         <div class="form-group">
-          <label>Available Balance</label>
+          <label id="modalAvailableLabel">Available Balance</label>
           <input type="text" id="modalAvailableBal" readonly style="opacity:0.8; font-weight:bold;" />
         </div>
         <div class="form-group">
+          <label>Paying To</label>
+          <input type="text" id="withdrawToLine" readonly style="opacity:0.8;" />
+        </div>
+        <div class="form-group">
           <label>Withdrawal Amount (₦)</label>
-          <input type="number" id="withdrawAmountInput" min="500" step="100" placeholder="e.g. 5000" required />
+          <input type="number" id="withdrawAmountInput" min="500" step="any" placeholder="e.g. 5000" required />
         </div>
         <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 10px; font-size: 0.8rem; color: #f59e0b;">
           ⚠️ Notice: Withdrawals are submitted directly to administration. You will receive your payment immediately admin approves it.
         </div>
         <button type="submit" class="btn btn-primary w-full" style="margin-top:6px;">Submit Withdrawal</button>
       </form>
+    </div>
+  </div>
+
+  <!-- WITHDRAW ALL CONFIRMATION MODAL -->
+  <div class="modal-overlay hidden" id="withdrawAllModal">
+    <div class="modal-content glass-card">
+      <button class="modal-close" id="closeWithdrawAllModal">&times;</button>
+      <div style="text-align:center; margin-bottom:12px;">
+        <span style="font-size:2.4rem;">⚠️</span>
+        <h3>Withdraw Everything?</h3>
+        <p class="muted" style="font-size:0.85rem;">You are about to withdraw the following:</p>
+      </div>
+      <ul class="history-list" id="withdrawAllSummary"></ul>
+      <div class="warn-box" id="withdrawAllWarning" style="margin-top:12px;">
+        ⚠️ This includes your invested capital. Once you withdraw it, your investment plans end and you will <strong>no longer earn the daily 4.5% reward</strong>. You will need to invest again to restart earning.
+      </div>
+      <div class="modal-actions" style="margin-top:14px;">
+        <button class="btn btn-ghost" id="cancelWithdrawAll">Cancel</button>
+        <button class="btn btn-primary" id="confirmWithdrawAll">Yes, Withdraw All</button>
+      </div>
     </div>
   </div>
 
