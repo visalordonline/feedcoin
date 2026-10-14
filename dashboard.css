@@ -300,3 +300,88 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 .tx-chip.active { background: var(--primary-gradient); color: #fff; border-color: transparent; }
 .tx-list { max-height: 520px; overflow-y: auto; }
+
+/* ==========================================================
+   Speed & Pigment Rendering Optimizations
+   ========================================================== */
+
+/* Accelerate glass cards & prevent heavy layout recalculations */
+.glass-card,
+.stat,
+.dashboard-tab-pane {
+  contain: layout style;
+  will-change: transform, opacity;
+  transform: translateZ(0); /* Hardware promotion */
+}
+
+/* Offscreen section rendering speedup */
+.dashboard-tab-pane:not(.active) {
+  display: none !important;
+  content-visibility: hidden;
+}
+
+.dashboard-tab-pane.active {
+  content-visibility: visible;
+  animation: tabFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Pigment / Display P3 color rendering boost where supported */
+@supports (color: color(display-p3 1 1 1)) {
+  :root {
+    --accent-emerald: color(display-p3 0.06 0.73 0.5);
+  }
+}
+
+.floating-chat-btn {
+  position: fixed;
+  bottom: calc(var(--bottomnav-h, 64px) + 20px); /* Stays clear of mobile bottom bar */
+  right: 20px;
+  z-index: 499;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 99px;
+  background: var(--primary-gradient, linear-gradient(135deg, #6c5ce7, #3b82f6));
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(108, 92, 231, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.floating-chat-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(108, 92, 231, 0.45);
+}
+
+.floating-chat-btn:active {
+  transform: translateY(0);
+}
+
+.floating-chat-btn .chat-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+/* On small screens, hide text and show just the circular bubble */
+@media (max-width: 600px) {
+  .floating-chat-btn {
+    padding: 12px;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    justify-content: center;
+  }
+  .floating-chat-btn .chat-text {
+    display: none;
+  }
+}

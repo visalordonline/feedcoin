@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>FeedCoin | Customer Support</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="dashboard.css" />
+    <style>
+        .support-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+        }
+        .support-card {
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+            padding: 36px 24px;
+        }
+        .support-icon-badge {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(108, 92, 231, 0.2), rgba(16, 185, 129, 0.2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+        }
+        .support-card h1 {
+            font-size: clamp(1.5rem, 5vw, 1.85rem);
+            margin-bottom: 10px;
+        }
+        .support-card p {
+            color: var(--text-muted, #94a3b8);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        .instructions-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border, rgba(255, 255, 255, 0.08));
+            border-radius: 12px;
+            padding: 16px;
+            text-align: left;
+            margin-bottom: 24px;
+            font-size: 0.88rem;
+        }
+        .instructions-box ul {
+            margin: 8px 0 0;
+            padding-left: 20px;
+            color: var(--text-muted, #94a3b8);
+        }
+        .instructions-box li {
+            margin-bottom: 6px;
+        }
+        .chat-trigger-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="dash-body">
+
+    <div class="blob blob-purple"></div>
+    <div class="blob blob-blue"></div>
+
+    <div class="support-wrapper">
+        <div class="glass-card support-card">
+            <div class="support-icon-badge">💬</div>
+            <h1>Need Assistance?</h1>
+            <p>
+                Our support team is here to help you resolve transaction inquiries, account verification issues, or general platform questions.
+            </p>
+
+            <div class="instructions-box">
+                <strong style="color: var(--text-color, #fff);">Quick Steps:</strong>
+                <ul>
+                    <li>Click the chat bubble widget located in the bottom-right corner of your screen.</li>
+                    <li>Alternatively, tap the button below to launch the live chat window immediately.</li>
+                    <li>Please provide your registered username or email for faster troubleshooting.</li>
+                </ul>
+            </div>
+
+            <button type="button" class="btn btn-primary chat-trigger-btn" id="openChatBtn">
+                <span>Start Live Chat</span>
+                <span aria-hidden="true">&rarr;</span>
+            </button>
+
+            <div style="margin-top: 16px;">
+                <a href="dashboard.html" class="muted" style="text-decoration: none; font-size: 0.85rem;">
+                    &larr; Return to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Smartsupp Live Chat script -->
+    <script type="text/javascript">
+    var _smartsupp = _smartsupp || {};
+    _smartsupp.key = 'b4049ec129d5b569c222ac3de6a0d9607f922d29';
+    window.smartsupp||(function(d) {
+      var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
+      s=d.getElementsByTagName('script')[0];c=d.createElement('script');
+      c.type='text/javascript';c.charset='utf-8';c.async=true;
+      c.src='https://www.smartsuppchat.com/loader.js?';s.parentNode.insertBefore(c,s);
+    })(document);
+
+    // Direct button listener to trigger the widget
+    document.getElementById('openChatBtn')?.addEventListener('click', function() {
+        if (window.smartsupp) {
+            window.smartsupp('chat:open');
+        }
+    });
+    </script>
+    <noscript>Powered by <a href="https://www.smartsupp.com" target="_blank">Smartsupp</a></noscript>
+
+</body>
+</html>

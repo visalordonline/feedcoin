@@ -210,14 +210,38 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js';
+    import { doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
       const toast = document.getElementById('toast');
       function showToast(msg) {
         if (!toast) return;
         toast.textContent = msg;
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 2800);
+      }
+
+      const user = await new Promise(resolve => onAuthStateChanged(auth, resolve));
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      const userDocRef = doc(db, 'users', user.uid);
+      try {
+        const accountSnapshot = await getDoc(userDocRef);
+        const existingBank = accountSnapshot.data()?.bankDetails;
+        if (existingBank) {
+          document.getElementById('vBankName').value = existingBank.bankName || '';
+          document.getElementById('vAccountNumber').value = existingBank.accountNumber || '';
+          document.getElementById('vAccountHolder').value = existingBank.accountHolder || '';
+        }
+      } catch (error) {
+        console.error('Unable to load saved bank details.', error);
+        showToast('Could not load saved bank details. You can still enter them below.');
       }
 
       // State
@@ -334,23 +358,14 @@
           step2Box.classList.add('hidden');
           step3Box.classList.remove('hidden');
 
-          // Autofill known name if available
-          const existingBank = localStorage.getItem('fc_user_bank');
-          if (existingBank) {
-            try {
-              const b = JSON.parse(existingBank);
-              document.getElementById('vBankName').value = b.bankName || '';
-              document.getElementById('vAccountNumber').value = b.accountNumber || '';
-              document.getElementById('vAccountHolder').value = b.accountHolder || idInfo.fullName;
-            } catch (err) {}
-          } else {
+          if (!document.getElementById('vAccountHolder').value) {
             document.getElementById('vAccountHolder').value = idInfo.fullName;
           }
         }, 1800);
       });
 
       // Step 3 Submission
-      document.getElementById('step3Form').addEventListener('submit', (e) => {
+      document.getElementById('step3Form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const bankName = document.getElementById('vBankName').value.trim();
         const accNum = document.getElementById('vAccountNumber').value.trim();
@@ -367,18 +382,30 @@
           docType: idInfo.type,
           docNumberMasked: idInfo.number.slice(0, 3) + '••••' + idInfo.number.slice(-3),
           fullName: idInfo.fullName,
-          faceVerified: true
+          docNumber: idInfo.number
         };
 
         const bankData = {
-          bankName: bankName,
+          bankName,
           accountNumber: accNum,
           accountHolder: accHolder
         };
 
-        // Persist verified status and bank details
-        localStorage.setItem('fc_kyc_data', JSON.stringify(verificationData));
-        localStorage.setItem('fc_user_bank', JSON.stringify(bankData));
+        const submitButton = document.querySelector('#step3Form button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Saving verification...';
+        try {
+          await setDoc(userDocRef, {
+            kycData: verificationData,
+            bankDetails: bankData
+          }, { merge: true });
+        } catch (error) {
+          console.error('Unable to save identity verification.', error);
+          showToast('Could not save your verification. Please check your connection and try again.');
+          submitButton.disabled = false;
+          submitButton.textContent = 'Complete Verification';
+          return;
+        }
 
         if (window.confetti) confetti();
         showToast('Identity & Bank Account verified!');
