@@ -1,6 +1,8 @@
 // Firebase SDK Initializer Module
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCOGrMFf2mRJxuWJPUk-1CgFEJ2GQ1GwqE",
@@ -15,5 +17,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-export { app, analytics };
+export { app, analytics, auth, db };

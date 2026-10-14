@@ -40,7 +40,12 @@
     </div>
   </div>
 
-  <script>
+  <script src="config.js"></script>
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js';
+    import { doc, getDoc, increment, updateDoc } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js';
+
     const params = new URLSearchParams(window.location.search);
     const plan = params.get('plan') || 'Starter';
     const amount = parseFloat(params.get('amount')) || 5000;
@@ -48,18 +53,40 @@
     document.getElementById('planName').textContent = plan;
     document.getElementById('amountDisplay').textContent = '₦' + amount.toLocaleString('en-NG', { minimumFractionDigits: 2 });
 
-    const savedName = localStorage.getItem('user_name');
-    if (savedName) document.getElementById('custName').value = savedName;
+    const user = await new Promise(resolve => onAuthStateChanged(auth, resolve));
+    if (!user) {
+      window.location.href = 'index.html';
+    } else {
+      const profileSnapshot = await getDoc(doc(db, 'users', user.uid));
+      const profile = profileSnapshot.data()?.profile;
+      if (profile?.fullName) document.getElementById('custName').value = profile.fullName;
+      if (profile?.email) document.getElementById('custEmail').value = profile.email;
+      if (profile?.phone) document.getElementById('custPhone').value = profile.phone;
+    }
 
     document.getElementById('paymentForm').addEventListener('submit', (e) => {
       e.preventDefault();
+      const publicKey = window.CONFIG?.FLUTTERWAVE_PUBLIC_KEY;
+      if (!publicKey || !/^FLWPUBK(?:_TEST)?-/.test(publicKey)) {
+        alert('Flutterwave is not configured with a valid public key. Please contact support.');
+        return;
+      }
+      if (!Number.isFinite(amount) || amount <= 0) {
+        alert('The selected investment amount is invalid.');
+        return;
+      }
+
       const email = document.getElementById('custEmail').value;
       const phone = document.getElementById('custPhone').value;
       const name = document.getElementById('custName').value;
 
       // Flutterwave Inline Checkout
-      FlutterwaveCheckout({
-        public_key: "FLWPUBK_TEST-SANDBOX-KEY", // Replace with your live or test Flutterwave public key
+      if (!auth.currentUser) {
+        window.location.href = 'index.html';
+        return;
+      }
+      window.FlutterwaveCheckout({
+        public_key: publicKey,
         tx_ref: "FC-" + Date.now(),
         amount: amount,
         currency: "NGN",
@@ -74,12 +101,18 @@
           description: `Payment for ${plan} plan`,
           logo: "https://feedcoin.io/logo.jpg",
         },
-        callback: function (data) {
+        callback: async function () {
           // Success callback: update active capital
-          let currentCap = parseFloat(localStorage.getItem('fc_capital')) || 0;
-          localStorage.setItem('fc_capital', currentCap + amount);
-          alert('Payment successful! Your plan is activated.');
-          window.location.href = 'dashboard.html';
+          try {
+            await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+              'balances.capital': increment(amount)
+            });
+            alert('Payment successful! Your plan is activated.');
+            window.location.href = 'dashboard.html';
+          } catch (error) {
+            console.error('Unable to update the signed-in user balance.', error);
+            alert('Payment completed, but your balance could not be updated. Please contact support.');
+          }
         },
         onclose: function () {
           // Window closed

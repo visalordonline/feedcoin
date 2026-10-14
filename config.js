@@ -1,5 +1,5 @@
 // Global Configuration
-const CONFIG = {
+window.CONFIG = {
   // Put your Flutterwave Public Key here (starts with FLWPUBK_TEST- or FLWPUBK-)
   FLUTTERWAVE_PUBLIC_KEY: "FLWPUBK-f93c46950311589724fdb0835ca4381e-X",
   
