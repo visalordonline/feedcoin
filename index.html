@@ -188,6 +188,7 @@
         <a href="#features">Features</a>
         <a href="#how-it-works">How It Works</a>
         <a href="#faq">FAQ</a>
+        <a href="policy.html">Policies & Terms</a>
       </div>
       <div class="footer-contact">
         <h4>Contact Us</h4>
@@ -218,6 +219,28 @@ window.smartsupp||(function(d) {
 })(document);
 </script>
 <noscript>Powered by <a href="https://www.smartsupp.com" target="_blank">Smartsupp</a></noscript>
-
+<!-- Policy Announcement Popup Modal -->
+<div class="modal-overlay hidden" id="policyNoticeModal">
+  <div class="modal-content glass-card" style="max-width: 500px; text-align: left;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <span class="badge">Platform Policy Notice</span>
+      <button class="modal-close" id="closePolicyNotice" style="position: static; font-size: 1.2rem;">&times;</button>
+    </div>
+    <h3 style="margin-bottom: 8px;">Important FeedCoin Policy Updates</h3>
+    <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 14px;">
+      Please take note of our key platform and reward rules:
+    </p>
+    <ul style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; margin-left: 18px; margin-bottom: 18px;">
+      <li><strong>Daily Tap:</strong> Claim 200 FeedCoin every 24-hour cycle.</li>
+      <li><strong>Withdrawals:</strong> Processed <strong>every Saturday only</strong>.</li>
+      <li><strong>Task Cashout:</strong> Minimum payout requirement is ₦2,000.</li>
+      <li><strong>Yields:</strong> Capital terms lock during active cycles.</li>
+    </ul>
+    <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
+      <a href="policy.html" style="font-size: 0.85rem; color: #a29bfe; text-decoration: underline; margin-right: auto;">Read Full Policy</a>
+      <button class="btn btn-primary btn-sm" id="acceptPolicyBtn">I Understand & Accept</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

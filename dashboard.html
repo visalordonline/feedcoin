@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>FeedCoin | Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="dashboard.css" />
@@ -401,6 +401,11 @@
         <p>Choose what you want to withdraw. Your bank account is saved once, after that you only confirm or enter an amount.</p>
       </div>
 
+      <!-- SATURDAY-ONLY WITHDRAWAL NOTICE BANNER -->
+      <div class="warn-box" style="margin-bottom: 14px; background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.4); color: #f59e0b;">
+        📅 <strong>Withdrawal Window:</strong> Withdrawals are open on <strong>Saturdays only</strong>. Requests attempted from Sunday through Friday will be blocked until the Saturday processing cycle.
+      </div>
+
       <div class="stat-grid">
         <div class="glass-card stat">
           <span>Invested Capital</span>
@@ -415,7 +420,7 @@
         <div class="glass-card stat">
           <span>Task &amp; Mining Rewards</span>
           <h2 id="wdTask">₦0.00</h2>
-          <small id="withdrawThresholdHint" style="color:#f59e0b;"></small>
+          <small id="withdrawThresholdHint" style="color:#f59e0b;">Min. withdrawal: ₦2,000.00</small>
         </div>
         <div class="glass-card stat">
           <span>Total Balance</span>
@@ -464,7 +469,6 @@
           </div>
         </div>
 
-        <!-- USER SIGNUP DETAILS GRID -->
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-top:16px; border-top:1px solid var(--card-border); padding-top:16px;">
           <div>
             <span class="muted" style="font-size:0.8rem; display:block;">Full Name</span>
@@ -500,27 +504,80 @@
         </div>
       </div>
 
+      <!-- Connected Bank Account -->
       <div class="glass-card section-card">
         <h3>Connected Bank Account</h3>
         <div id="profileBankDetails" class="muted">No bank details added yet.</div>
       </div>
+
+      <!-- Styled Policy Link Card -->
+      <a href="policy.html" class="glass-card policy-link-card">
+        <div class="policy-link-left">
+          <span class="policy-icon">📜</span>
+          <div class="policy-link-meta">
+            <strong>Withdrawal & Operational Policy</strong>
+            <small>Review Saturday payout terms & rules</small>
+          </div>
+        </div>
+        <span class="policy-arrow">→</span>
+      </a>
+
+      <!-- Floating Support Button -->
       <a href="chat.html" class="floating-chat-btn" aria-label="Chat with Support">
-  <span class="chat-icon">💬</span>
-  <span class="chat-text">Chat with Support</span>
-</a>
+        <span class="chat-icon">💬</span>
+        <span class="chat-text">Chat with Support</span>
+      </a>
     </section>
 
     <!-- ============ 5. REFERRALS ============ -->
     <section class="dashboard-tab-pane" id="tab-team">
       <div class="pane-head">
         <h1>Referral Program</h1>
-        <p>Share your link with your network to earn commissions.</p>
+        <p>Refer 1 and get ₦500. Share your link with friends to claim your bonus.</p>
       </div>
+
+      <!-- Promo Highlight Card -->
+      <div class="glass-card section-card" style="border-left: 4px solid var(--accent-emerald); background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(108, 92, 231, 0.12));">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div>
+            <h3 style="color: var(--accent-emerald); font-size: 1.25rem; margin-bottom: 4px;">Refer 1 and get ₦500</h3>
+            <p class="muted" style="font-size: 0.9rem;">
+              Receive <strong>₦500.00</strong> bonus directly into your balance for every user who registers and activates with your personal link.
+            </p>
+          </div>
+          <span style="font-size: 2.2rem;">🎁</span>
+        </div>
+      </div>
+
+      <!-- Referral Link Box (Fixed SSL: Uses feedcoin.online without www) -->
       <div class="glass-card section-card">
+        <h3>Your Personal Referral Link</h3>
         <div class="referral-box">
-          <input type="text" id="refCodeInput" value="https://www.feedcoin.online/index.html" readonly />
+          <input type="text" id="refCodeInput" value="https://feedcoin.online/index.html" readonly />
           <button class="btn btn-primary" id="copyRefBtn">Copy Link</button>
         </div>
+      </div>
+
+      <!-- Team Overview Stats -->
+      <div class="stat-grid">
+        <div class="glass-card stat">
+          <span>Total Invited</span>
+          <h2 id="totalReferredCount">0</h2>
+          <small>Registered members</small>
+        </div>
+        <div class="glass-card stat">
+          <span>Team Investment Volume</span>
+          <h2 id="totalReferredInvested" style="color: var(--accent-emerald);">₦0.00</h2>
+          <small>Total capital funded by your team</small>
+        </div>
+      </div>
+
+      <!-- Referred Users List with Investment Breakdown -->
+      <div class="glass-card section-card">
+        <h3>👥 My Downline Members</h3>
+        <ul class="history-list" id="referralsList">
+          <li class="history-empty muted">No members joined through your link yet.</li>
+        </ul>
       </div>
     </section>
   </main>
@@ -535,7 +592,7 @@
     <a href="#" class="tab-link" data-tab="tab-team"><span class="ico">👥</span><span class="lbl">Refer</span></a>
   </nav>
 
-  <!-- VERIFICATION PROMPT MODAL (Checked dynamically) -->
+  <!-- VERIFICATION PROMPT MODAL -->
   <div class="modal-overlay hidden" id="kycPromptModal">
     <div class="modal-content glass-card" style="text-align: center;">
       <span style="font-size: 2.8rem;">🛡️</span>
@@ -546,6 +603,21 @@
       <div style="display: flex; gap: 10px; justify-content: center;">
         <button class="btn btn-ghost" id="dismissKycPrompt">Later</button>
         <a href="verification.html" class="btn btn-primary" style="text-decoration:none; display:inline-flex; align-items:center;">Verify Now</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- REFERRAL REQUIREMENT MODAL (Prompted when user has 0 investments and 0 referrals) -->
+  <div class="modal-overlay hidden" id="referralRequiredModal">
+    <div class="modal-content glass-card" style="text-align: center;">
+      <span style="font-size: 2.8rem;">👥</span>
+      <h3 style="margin: 10px 0 6px;">Invite at Least 1 Person</h3>
+      <p class="muted" style="font-size: 0.9rem; margin-bottom: 18px; line-height: 1.5;">
+        Since you have not activated an investment plan, you must invite <strong>at least 1 person</strong> to create a FeedCoin account before you can process withdrawals.
+      </p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button class="btn btn-ghost" id="dismissRefPrompt">Close</button>
+        <button class="btn btn-primary" id="goToReferralTabBtn">Go to Referrals</button>
       </div>
     </div>
   </div>
@@ -573,7 +645,7 @@
           <input type="number" id="withdrawAmountInput" min="500" step="any" placeholder="e.g. 5000" required />
         </div>
         <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 10px; font-size: 0.8rem; color: #f59e0b;">
-          ⚠️ Notice: Withdrawals are submitted directly to administration. You will receive your payment immediately admin approves it.
+          ⚠️ Notice: Withdrawals are processed on Saturdays only and submitted for review.
         </div>
         <button type="submit" class="btn btn-primary w-full" style="margin-top:6px;">Submit Withdrawal</button>
       </form>
@@ -600,7 +672,7 @@
     </div>
   </div>
 
-  <!-- Bank Details Modal -->
+  <!-- BANK DETAILS MODAL -->
   <div class="modal-overlay hidden" id="bankModal">
     <div class="modal-content glass-card">
       <button class="modal-close" id="closeBankModal">&times;</button>
@@ -624,13 +696,35 @@
     </div>
   </div>
 
+  <!-- POLICY ANNOUNCEMENT POPUP MODAL (CACHED) -->
+  <div class="modal-overlay hidden" id="policyNoticeModal">
+    <div class="modal-content glass-card" style="max-width: 500px; text-align: left;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <span class="badge">Platform Policy Notice</span>
+        <button class="modal-close" id="closePolicyNotice" style="position: static; font-size: 1.2rem;">&times;</button>
+      </div>
+      <h3 style="margin-bottom: 8px;">Important FeedCoin Policy Updates</h3>
+      <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 14px;">
+        Please take note of our key platform and reward rules:
+      </p>
+      <ul style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; margin-left: 18px; margin-bottom: 18px;">
+        <li><strong>Daily Tap:</strong> Claim 200 FeedCoin every 24-hour cycle.</li>
+        <li><strong>Withdrawals:</strong> Processed <strong>every Saturday only</strong>.</li>
+        <li><strong>Task Cashout:</strong> Minimum payout requirement is ₦2,000.</li>
+        <li><strong>Yields:</strong> Capital terms lock during active cycles.</li>
+      </ul>
+      <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
+        <a href="policy.html" style="font-size: 0.85rem; color: #a29bfe; text-decoration: underline; margin-right: auto;">Read Full Policy</a>
+        <button class="btn btn-primary btn-sm" id="acceptPolicyBtn">I Understand & Accept</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="https://checkout.flutterwave.com/v3.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="config.js"></script>
   <script type="module" src="dashboard.js"></script>
-
-
 </body>
 </html>

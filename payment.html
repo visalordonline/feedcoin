@@ -44,7 +44,7 @@
   <script type="module">
     import { auth, db } from './firebase-config.js';
     import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js';
-    import { doc, getDoc, increment, updateDoc } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js';
+    import { doc, getDoc, increment, updateDoc, setDoc } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js';
 
     const params = new URLSearchParams(window.location.search);
     const plan = params.get('plan') || 'Starter';
@@ -107,6 +107,24 @@
             await updateDoc(doc(db, 'users', auth.currentUser.uid), {
               'balances.capital': increment(amount)
             });
+            // Keep the referrer's view of this member's investment in sync
+            try {
+              const selfSnap = await getDoc(doc(db, 'users', auth.currentUser.uid));
+              const me = selfSnap.data() || {};
+              const referredBy = (me.referredBy || '').trim();
+              if (referredBy) {
+                await setDoc(doc(db, 'referrals', auth.currentUser.uid), {
+                  referredBy,
+                  memberUid: auth.currentUser.uid,
+                  fullName: me.profile?.fullName || 'Member',
+                  username: me.profile?.username || '',
+                  invested: Number(me.balances?.capital || 0),
+                  createdAt: me.createdAt || Date.now()
+                }, { merge: true });
+              }
+            } catch (refErr) {
+              console.warn('Referral record not updated:', refErr);
+            }
             alert('Payment successful! Your plan is activated.');
             window.location.href = 'dashboard.html';
           } catch (error) {

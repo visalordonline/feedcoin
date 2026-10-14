@@ -385,3 +385,61 @@ button:focus-visible, a:focus-visible, input:focus-visible {
     display: none;
   }
 }
+/* Policy Link Card */
+.policy-link-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-radius: var(--radius-md, 16px);
+  text-decoration: none;
+  color: var(--text-color, #f3f4f6);
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.08));
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  margin-top: 4px;
+}
+
+.policy-link-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(162, 155, 254, 0.5);
+  background: color-mix(in srgb, var(--card-bg, rgba(255, 255, 255, 0.04)) 90%, #6c5ce7 10%);
+}
+
+.policy-link-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.policy-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.policy-link-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.policy-link-meta strong {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-color, #f3f4f6);
+}
+
+.policy-link-meta small {
+  color: var(--text-muted, #9ca3af);
+  font-size: 0.78rem;
+}
+
+.policy-arrow {
+  font-size: 1.1rem;
+  color: #a29bfe;
+  font-weight: 700;
+  transition: transform 0.2s ease;
+}
+
+.policy-link-card:hover .policy-arrow {
+  transform: translateX(4px);
+}

@@ -1,6 +1,16 @@
 import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js';
-import { doc, getDoc, onSnapshot, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js';
+import {
+  doc,
+  getDoc,
+  onSnapshot,
+  setDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs
+} from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Helper for namespaced storage keys
@@ -10,12 +20,60 @@ document.addEventListener('DOMContentLoaded', () => {
     return '₦' + Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
+  // Saturday check: Sunday = 0, ..., Saturday = 6
+  function isWithdrawalDay() {
+    return new Date().getDay() === 6;
+  }
+
+  const toast = document.getElementById('toast');
+  function showToast(msg) {
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
   // -------------------------------------------------------------
   // 1. FAST LOCAL HYDRATION (Prevents UI flickering on refresh)
   // -------------------------------------------------------------
   const lastActiveUid = localStorage.getItem('fc_last_uid');
   if (lastActiveUid) {
     hydrateCachedUI(lastActiveUid);
+  }
+
+  function renderProfileBasics(prof, currentUid, authUser) {
+      const name = prof.fullName || authUser?.displayName || 'FeedCoin User';
+    const email = prof.email || authUser?.email || '';
+    const uname = (prof.username || '').trim().toLowerCase();
+    const phone = prof.phone || '';
+    const initial = name.charAt(0).toUpperCase();
+
+    const headerAvatar = document.getElementById('headerAvatar');
+    const headerUserName = document.getElementById('headerUserName');
+    if (headerAvatar) headerAvatar.textContent = initial;
+    if (headerUserName) headerUserName.textContent = name;
+
+    const profileAvatar = document.getElementById('profileAvatar');
+    const profileName = document.getElementById('profileName');
+    const profileEmail = document.getElementById('profileEmail');
+    if (profileAvatar) profileAvatar.textContent = initial;
+    if (profileName) profileName.textContent = name;
+    if (profileEmail) profileEmail.textContent = email;
+
+    const displayFullName = document.getElementById('displayFullName');
+    const displayUsername = document.getElementById('displayUsername');
+    const displayEmail = document.getElementById('displayEmail');
+    const displayPhone = document.getElementById('displayPhone');
+    if (displayFullName) displayFullName.textContent = name;
+    if (displayUsername) displayUsername.textContent = uname ? '@' + uname : '-';
+    if (displayEmail) displayEmail.textContent = email;
+    if (displayPhone) displayPhone.textContent = phone || '-';
+
+    // Secure referral link without 'www'
+    const refCodeInput = document.getElementById('refCodeInput');
+    if (refCodeInput) {
+      refCodeInput.value = `https://feedcoin.online/index.html?ref=${encodeURIComponent(uname || currentUid)}`;
+    }
   }
 
   function hydrateCachedUI(uid) {
@@ -30,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const kyc = JSON.parse(localStorage.getItem(getStorageKey(uid, 'kyc_data')) || 'null');
 
       renderBalancesFromValues(cap, bon, tsk, yld);
-      if (profile && Object.keys(profile).length) renderProfileUI(profile, uid);
+      if (profile && Object.keys(profile).length) renderProfileBasics(profile, uid);
       if (bank) renderBankUI(bank);
       if (txHistory.length) renderTxHistoryFromList(txHistory);
       if (kyc) renderKycStatus(kyc);
@@ -54,12 +112,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const userStorageKey = key => getStorageKey(uid, key);
     const userDocRef = doc(db, 'users', uid);
 
-    // Initial pass hydration for current user
     hydrateCachedUI(uid);
 
     let accountSnapshot = await getDoc(userDocRef);
     if (!accountSnapshot.exists()) {
-      // Safe write: merge ensures pre-existing fields like kycData are never overwritten
       await setDoc(userDocRef, {
         profile: {
           fullName: user.displayName || 'FeedCoin User',
@@ -76,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const account = accountSnapshot.data() || {};
     applyAccountData(account);
+    syncOwnReferralRecord(account);
 
     function applyAccountData(data) {
       if (!data) return;
@@ -111,50 +168,120 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // -------------------------------------------------------------
-    // PROFILE DETAILS
-    // -------------------------------------------------------------
+    // PROFILE UI
     function renderProfileUI(prof, currentUid, authUser) {
-      const name = prof.fullName || authUser?.displayName || 'FeedCoin User';
-      const email = prof.email || authUser?.email || '';
-      const uname = prof.username || '';
-      const phone = prof.phone || '';
-      const initial = name.charAt(0).toUpperCase();
+      renderProfileBasics(prof, currentUid, authUser);
+      const uname = (prof.username || '').trim().toLowerCase();
 
-      const headerAvatar = document.getElementById('headerAvatar');
-      const headerUserName = document.getElementById('headerUserName');
-      if (headerAvatar) headerAvatar.textContent = initial;
-      if (headerUserName) headerUserName.textContent = name;
-
-      const profileAvatar = document.getElementById('profileAvatar');
-      const profileName = document.getElementById('profileName');
-      const profileEmail = document.getElementById('profileEmail');
-      if (profileAvatar) profileAvatar.textContent = initial;
-      if (profileName) profileName.textContent = name;
-      if (profileEmail) profileEmail.textContent = email;
-
-      const displayFullName = document.getElementById('displayFullName');
-      const displayUsername = document.getElementById('displayUsername');
-      const displayEmail = document.getElementById('displayEmail');
-      const displayPhone = document.getElementById('displayPhone');
-      if (displayFullName) displayFullName.textContent = name;
-      if (displayUsername) displayUsername.textContent = uname ? '@' + uname : '-';
-      if (displayEmail) displayEmail.textContent = email;
-      if (displayPhone) displayPhone.textContent = phone || '-';
-
-      const refCodeInput = document.getElementById('refCodeInput');
-      if (refCodeInput) {
-        refCodeInput.value = `https://www.feedcoin.online/index.html?ref=${encodeURIComponent(uname || currentUid)}`;
-      }
+      // Query and render downline members and their investments
+      loadReferredUsers(uname, currentUid);
     }
 
     // -------------------------------------------------------------
-    // BALANCES
+    // DOWNLINE REFERRAL TRACKING
     // -------------------------------------------------------------
+    function escapeHtml(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // Keeps this user's public referral record (name + amount invested) up to date
+    // so whoever referred them can see it. Also back-fills older accounts.
+    async function syncOwnReferralRecord(data) {
+      const referredBy = String(data?.referredBy || '').trim();
+      if (!referredBy || referredBy === uid) return;
+      const p = data.profile || {};
+      try {
+        await setDoc(doc(db, 'referrals', uid), {
+          referredBy,
+          memberUid: uid,
+          fullName: p.fullName || 'Member',
+          username: p.username || '',
+          invested: Number(data.balances?.capital || 0),
+          createdAt: data.createdAt || Date.now()
+        }, { merge: true });
+      } catch (e) {
+        console.warn('Referral record sync failed:', e);
+      }
+    }
+
+    async function loadReferredUsers(username, currentUid) {
+      const referralsList = document.getElementById('referralsList');
+      const totalCountEl = document.getElementById('totalReferredCount');
+      const totalInvestedEl = document.getElementById('totalReferredInvested');
+
+      try {
+        const refsRef = collection(db, 'referrals');
+        const keys = [...new Set([username, currentUid].filter(Boolean))];
+        const results = await Promise.allSettled(
+          keys.map(k => getDocs(query(refsRef, where('referredBy', '==', k))))
+        );
+
+        const membersMap = new Map();
+        let failed = 0;
+        results.forEach(r => {
+          if (r.status === 'fulfilled') {
+            r.value.forEach(docSnap => {
+              if (docSnap.id !== currentUid) membersMap.set(docSnap.id, docSnap.data());
+            });
+          } else {
+            failed++;
+            console.warn('Referral query failed:', r.reason);
+          }
+        });
+
+        if (failed === results.length) {
+          if (referralsList) referralsList.innerHTML = '<li class="history-empty muted">Could not load your referrals right now. Please refresh.</li>';
+          return;
+        }
+
+        const members = Array.from(membersMap.values())
+          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        localStorage.setItem(userStorageKey('referral_count'), String(members.length));
+        if (totalCountEl) totalCountEl.textContent = members.length;
+
+        if (!members.length) {
+          if (referralsList) referralsList.innerHTML = '<li class="history-empty muted">No members joined through your link yet.</li>';
+          if (totalInvestedEl) totalInvestedEl.textContent = formatNGN(0);
+          return;
+        }
+
+        let totalTeamVolume = 0;
+        const listHtml = members.map(member => {
+          const memberName = escapeHtml(member.fullName || member.username || 'Member');
+          const memberUsername = member.username ? `@${escapeHtml(member.username)}` : '';
+          const memberInvested = Number(member.invested || 0);
+          totalTeamVolume += memberInvested;
+          const joinedDate = member.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'Active Member';
+
+          return `
+            <li class="history-item">
+              <div>
+                <strong>${memberName} <span class="muted" style="font-weight: normal; font-size: 0.8rem;">${memberUsername}</span></strong>
+                <small>Joined: ${joinedDate}</small>
+              </div>
+              <div style="text-align: right;">
+                <span class="earned-amount" style="color: ${memberInvested > 0 ? 'var(--accent-emerald)' : 'var(--text-muted)'};">
+                  ${formatNGN(memberInvested)}
+                </span>
+                <small style="display: block; color: var(--text-muted); font-size: 0.72rem;">Invested</small>
+              </div>
+            </li>
+          `;
+        }).join('');
+
+        if (referralsList) referralsList.innerHTML = listHtml;
+        if (totalInvestedEl) totalInvestedEl.textContent = formatNGN(totalTeamVolume);
+      } catch (err) {
+        console.warn('Error loading referrals:', err);
+      }
+    }
+
+    // BALANCES
     function getCapital() { return parseFloat(localStorage.getItem(userStorageKey('capital'))) || 0; }
     function getBonus() { return parseFloat(localStorage.getItem(userStorageKey('bonus'))) || 0; }
     function getTaskBal() { return parseFloat(localStorage.getItem(userStorageKey('task_bal'))) || 0; }
     function getYieldTotal() { return parseFloat(localStorage.getItem(userStorageKey('yield_total'))) || 0; }
+    function getReferralCount() { return parseInt(localStorage.getItem(userStorageKey('referral_count')) || '0', 10); }
 
     function setCapital(v) {
       const value = Math.max(0, v);
@@ -181,9 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderBalancesFromValues(getCapital(), getBonus(), getTaskBal(), getYieldTotal());
     }
 
-    // -------------------------------------------------------------
-    // BANK DETAILS & MODALS
-    // -------------------------------------------------------------
+    // BANK DETAILS
     const editBankBtn = document.getElementById('editBankBtn');
     const bankModal = document.getElementById('bankModal');
     const closeBankModal = document.getElementById('closeBankModal');
@@ -227,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // -------------------------------------------------------------
-    // WITHDRAWALS
+    // WITHDRAWALS & REFERRAL GATE VALIDATION
     // -------------------------------------------------------------
     const withdrawAmountModal = document.getElementById('withdrawAmountModal');
     const closeWithdrawModal = document.getElementById('closeWithdrawModal');
@@ -235,9 +360,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalAvailableBal = document.getElementById('modalAvailableBal');
     const withdrawToLine = document.getElementById('withdrawToLine');
     const withdrawAmountInput = document.getElementById('withdrawAmountInput');
+    const referralRequiredModal = document.getElementById('referralRequiredModal');
     let currentWithdrawType = null;
 
+    // Checks if a non-investing user has invited at least one person
+    function canUserWithdraw() {
+      const capital = getCapital();
+      if (capital > 0) return true; // Active investors can withdraw freely
+
+      // Has no capital: check if they invited at least 1 person
+      const refCount = getReferralCount();
+      return refCount >= 1;
+    }
+
     function promptWithdraw(type) {
+      if (!isWithdrawalDay()) {
+        showToast('Withdrawals are only processed on Saturdays. Please try again on Saturday.');
+        return;
+      }
+
+      if (!canUserWithdraw()) {
+        referralRequiredModal?.classList.remove('hidden');
+        return;
+      }
+
       const bank = getSavedBank();
       if (!bank) {
         showToast('Please add bank details first.');
@@ -287,10 +433,10 @@ document.addEventListener('DOMContentLoaded', () => {
       recordHistory('Withdrawal Pending', amount, 'withdraw');
       withdrawAmountModal?.classList.add('hidden');
       renderBalances();
-      showToast('Withdrawal submitted for admin review!');
+      showToast('Withdrawal submitted for Saturday processing!');
     });
 
-    // Withdraw All
+    // WITHDRAW ALL
     const withdrawAllModal = document.getElementById('withdrawAllModal');
     const closeWithdrawAllModal = document.getElementById('closeWithdrawAllModal');
     const cancelWithdrawAll = document.getElementById('cancelWithdrawAll');
@@ -298,6 +444,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const withdrawAllSummary = document.getElementById('withdrawAllSummary');
 
     document.getElementById('withdrawAllBtn')?.addEventListener('click', () => {
+      if (!isWithdrawalDay()) {
+        showToast('Withdrawals are only processed on Saturdays. Please try again on Saturday.');
+        return;
+      }
+
+      if (!canUserWithdraw()) {
+        referralRequiredModal?.classList.remove('hidden');
+        return;
+      }
+
       const bank = getSavedBank();
       if (!bank) {
         showToast('Please add bank details first.');
@@ -334,7 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
       recordHistory('Full Account Withdrawal', total, 'withdraw');
       withdrawAllModal?.classList.add('hidden');
       renderBalances();
-      showToast('Withdrawal submitted! Capital returned.');
+      showToast('Withdrawal submitted for Saturday processing!');
     });
 
     function recordHistory(title, amount, type = 'earn') {
@@ -356,9 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTxHistoryFromList(history);
     }
 
-    // -------------------------------------------------------------
     // TAP MINING
-    // -------------------------------------------------------------
     const coinBtn = document.getElementById('CoinBtn');
     coinBtn?.addEventListener('click', () => {
       const lastMined = parseInt(localStorage.getItem(userStorageKey('last_mined')) || '0', 10);
@@ -533,6 +687,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('kycPromptModal')?.classList.add('hidden');
   });
 
+  const dismissRefPrompt = document.getElementById('dismissRefPrompt');
+  dismissRefPrompt?.addEventListener('click', () => {
+    document.getElementById('referralRequiredModal')?.classList.add('hidden');
+  });
+
+  const goToReferralTabBtn = document.getElementById('goToReferralTabBtn');
+  goToReferralTabBtn?.addEventListener('click', () => {
+    document.getElementById('referralRequiredModal')?.classList.add('hidden');
+    switchDashboardTab('tab-team');
+  });
+
   const copyRefBtn = document.getElementById('copyRefBtn');
   copyRefBtn?.addEventListener('click', () => {
     const refCodeInput = document.getElementById('refCodeInput');
@@ -560,14 +725,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }).catch(() => showToast('Could not log out. Please try again.'));
   });
 
-  const toast = document.getElementById('toast');
-  function showToast(msg) {
-    if (!toast) return;
-    toast.textContent = msg;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2500);
-  }
-
   document.querySelectorAll('.invest-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const plan = btn.dataset.plan;
@@ -575,4 +732,43 @@ document.addEventListener('DOMContentLoaded', () => {
       window.location.href = `payment.html?plan=${encodeURIComponent(plan)}&amount=${encodeURIComponent(amount)}`;
     });
   });
+
+  // -------------------------------------------------------------
+  // 5. LOCAL CACHED POLICY POPUP CONTROLLER
+  // -------------------------------------------------------------
+  const policyModal = document.getElementById('policyNoticeModal');
+  const closeNoticeBtn = document.getElementById('closePolicyNotice');
+  const acceptPolicyBtn = document.getElementById('acceptPolicyBtn');
+  const CACHE_KEY = 'feedcoin_policy_ack';
+  const EXPIRY_DAYS = 7;
+
+  function shouldShowPolicyPopup() {
+    const cachedData = localStorage.getItem(CACHE_KEY);
+    if (!cachedData) return true;
+    try {
+      const parsed = JSON.parse(cachedData);
+      const now = Date.now();
+      if (now - parsed.timestamp > EXPIRY_DAYS * 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(CACHE_KEY);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  function markPolicyAccepted() {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ accepted: true, timestamp: Date.now() }));
+    policyModal?.classList.add('hidden');
+  }
+
+  if (shouldShowPolicyPopup()) {
+    setTimeout(() => {
+      policyModal?.classList.remove('hidden');
+    }, 1500);
+  }
+
+  closeNoticeBtn?.addEventListener('click', () => policyModal?.classList.add('hidden'));
+  acceptPolicyBtn?.addEventListener('click', markPolicyAccepted);
 });

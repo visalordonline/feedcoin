@@ -22,11 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const hamburgerBtn = document.getElementById('hamburgerBtn');
   const navLinks = document.getElementById('navLinks');
 
-  // Capture Referral code if visitor arrives via www.feedcoin.online/?ref=USERNAME
+  // Capture Referral code if visitor arrives via https://feedcoin.online/?ref=USERNAME
   const urlParams = new URLSearchParams(window.location.search);
   const refCode = urlParams.get('ref') || urlParams.get('referrer');
   if (refCode) {
-    localStorage.setItem('referred_by', refCode.trim());
+    localStorage.setItem('referred_by', refCode.trim().toLowerCase());
   }
 
   // Mobile menu toggle
@@ -91,14 +91,16 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => toast.classList.remove('show'), 2500);
   }
 
-  // Handle Registration: Save all user inputs
+  // Handle Registration: Save all user inputs and referrer
   registerForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fullName = document.getElementById('regFullName')?.value.trim() || 'FeedCoin User';
-    const username = document.getElementById('regUsername')?.value.trim() || 'member';
+    const username = document.getElementById('regUsername')?.value.trim().toLowerCase() || 'member';
     const email = document.getElementById('regEmail')?.value.trim() || 'user@feedcoin.online';
     const phone = document.getElementById('regPhone')?.value.trim() || 'Not provided';
     const password = document.getElementById('regPassword')?.value;
+
+    const referredBy = (localStorage.getItem('referred_by') || '').trim().toLowerCase();
 
     try {
       const credential = await createUserWithEmailAndPassword(auth, email, password);
@@ -106,8 +108,29 @@ document.addEventListener('DOMContentLoaded', () => {
         profile: { fullName, username, email, phone },
         balances: { capital: 0, bonus: 0, task: 0, yieldTotal: 0 },
         lastMinedAt: 0,
-        transactionHistory: []
+        transactionHistory: [],
+        referredBy: referredBy || null,
+        createdAt: Date.now()
       });
+
+      // Public referral record: lets the referrer see this member + amount invested
+      // without exposing the member's private user document.
+      if (referredBy) {
+        try {
+          await setDoc(doc(db, 'referrals', credential.user.uid), {
+            referredBy,
+            memberUid: credential.user.uid,
+            fullName,
+            username,
+            invested: 0,
+            createdAt: Date.now()
+          });
+        } catch (refErr) {
+          console.warn('Could not save referral record:', refErr);
+        }
+      }
+
+      localStorage.removeItem('referred_by');
 
       showToast('Account created! Loading your dashboard...');
       setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
@@ -133,4 +156,52 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Email or password is incorrect. Please try again.');
     }
   });
+});
+
+// Local Cache Policy Popup Controller
+document.addEventListener('DOMContentLoaded', () => {
+  const policyModal = document.getElementById('policyNoticeModal');
+  const closeBtn = document.getElementById('closePolicyNotice');
+  const acceptBtn = document.getElementById('acceptPolicyBtn');
+
+  const CACHE_KEY = 'feedcoin_policy_ack';
+  const EXPIRY_DAYS = 7;
+
+  function shouldShowPolicyPopup() {
+    const cachedData = localStorage.getItem(CACHE_KEY);
+    if (!cachedData) return true;
+
+    try {
+      const parsed = JSON.parse(cachedData);
+      const now = new Date().getTime();
+      if (now - parsed.timestamp > EXPIRY_DAYS * 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(CACHE_KEY);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  function markPolicyAccepted() {
+    const payload = {
+      accepted: true,
+      timestamp: new Date().getTime()
+    };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+    policyModal?.classList.add('hidden');
+  }
+
+  if (shouldShowPolicyPopup()) {
+    setTimeout(() => {
+      policyModal?.classList.remove('hidden');
+    }, 1500);
+  }
+
+  closeBtn?.addEventListener('click', () => {
+    policyModal?.classList.add('hidden');
+  });
+
+  acceptBtn?.addEventListener('click', markPolicyAccepted);
 });
