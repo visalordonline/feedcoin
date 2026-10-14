@@ -9,20 +9,19 @@ import {
   collection,
   query,
   where,
-  getDocs
+  getDocs,
+  runTransaction
 } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Helper for namespaced storage keys
   const getStorageKey = (uid, key) => `fc_${uid}_${key}`;
 
   function formatNGN(n) {
     return '₦' + Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  // Saturday check: Sunday = 0, ..., Saturday = 6
   function isWithdrawalDay() {
-    return new Date().getDay() === 6;
+    return new Date().getDay() === 6; // Saturdays
   }
 
   const toast = document.getElementById('toast');
@@ -33,16 +32,20 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => toast.classList.remove('show'), 2500);
   }
 
-  // -------------------------------------------------------------
-  // 1. FAST LOCAL HYDRATION (Prevents UI flickering on refresh)
-  // -------------------------------------------------------------
+  // 1. FAST LOCAL HYDRATION
   const lastActiveUid = localStorage.getItem('fc_last_uid');
   if (lastActiveUid) {
     hydrateCachedUI(lastActiveUid);
   }
 
+  function renderReferralEarnings(n) {
+    document.querySelectorAll('[data-referral-earnings]').forEach(el => {
+      el.textContent = formatNGN(n);
+    });
+  }
+
   function renderProfileBasics(prof, currentUid, authUser) {
-      const name = prof.fullName || authUser?.displayName || 'FeedCoin User';
+    const name = prof.fullName || authUser?.displayName || 'FeedCoin User';
     const email = prof.email || authUser?.email || '';
     const uname = (prof.username || '').trim().toLowerCase();
     const phone = prof.phone || '';
@@ -69,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (displayEmail) displayEmail.textContent = email;
     if (displayPhone) displayPhone.textContent = phone || '-';
 
-    // Secure referral link without 'www'
     const refCodeInput = document.getElementById('refCodeInput');
     if (refCodeInput) {
       refCodeInput.value = `https://feedcoin.online/index.html?ref=${encodeURIComponent(uname || currentUid)}`;
@@ -88,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const kyc = JSON.parse(localStorage.getItem(getStorageKey(uid, 'kyc_data')) || 'null');
 
       renderBalancesFromValues(cap, bon, tsk, yld);
+      renderReferralEarnings(parseFloat(localStorage.getItem(getStorageKey(uid, 'referral_earnings'))) || 0);
       if (profile && Object.keys(profile).length) renderProfileBasics(profile, uid);
       if (bank) renderBankUI(bank);
       if (txHistory.length) renderTxHistoryFromList(txHistory);
@@ -97,9 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // -------------------------------------------------------------
   // 2. AUTHENTICATION & REMOTE FIRESTORE SYNC
-  // -------------------------------------------------------------
   (async () => {
     const user = await new Promise(resolve => onAuthStateChanged(auth, resolve));
     if (!user) {
@@ -144,7 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem(userStorageKey('yield_total'), String(balances.yieldTotal || 0));
       localStorage.setItem(userStorageKey('last_mined'), String(data.lastMinedAt || 0));
       localStorage.setItem(userStorageKey('tx_history'), JSON.stringify(data.transactionHistory || []));
-      
+      localStorage.setItem(userStorageKey('referral_earnings'), String(data.referralEarnings || 0));
+      localStorage.setItem(userStorageKey('rewarded_refs'), JSON.stringify(data.rewardedReferrals || []));
+      renderReferralEarnings(data.referralEarnings || 0);
+
       if (data.profile) {
         localStorage.setItem(userStorageKey('profile'), JSON.stringify(data.profile));
       }
@@ -155,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(userStorageKey('kyc_data'), JSON.stringify(data.kycData));
       }
 
+      syncAdminWithdrawalDecisions();
       renderBalances();
       renderProfileUI(data.profile || {}, uid, user);
       renderBankUI(data.bankDetails);
@@ -168,24 +173,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // PROFILE UI
     function renderProfileUI(prof, currentUid, authUser) {
       renderProfileBasics(prof, currentUid, authUser);
       const uname = (prof.username || '').trim().toLowerCase();
-
-      // Query and render downline members and their investments
       loadReferredUsers(uname, currentUid);
     }
 
-    // -------------------------------------------------------------
-    // DOWNLINE REFERRAL TRACKING
-    // -------------------------------------------------------------
     function escapeHtml(v) {
       return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
-    // Keeps this user's public referral record (name + amount invested) up to date
-    // so whoever referred them can see it. Also back-fills older accounts.
     async function syncOwnReferralRecord(data) {
       const referredBy = String(data?.referredBy || '').trim();
       if (!referredBy || referredBy === uid) return;
@@ -204,10 +201,63 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Credits referral bonus immediately
+    async function creditReferralRewards(eligibleUids) {
+      const reward = Number(window.CONFIG?.REFERRAL_REWARD) || 500;
+      const cached = () => {
+        try { return new Set(JSON.parse(localStorage.getItem(userStorageKey('rewarded_refs')) || '[]')); }
+        catch (e) { return new Set(); }
+      };
+      if (!eligibleUids.length) return cached();
+
+      try {
+        const outcome = await runTransaction(db, async (tx) => {
+          const snap = await tx.get(userDocRef);
+          const data = snap.data() || {};
+          const already = new Set(data.rewardedReferrals || []);
+          const fresh = eligibleUids.filter(id => !already.has(id));
+          if (!fresh.length) return { rewarded: already, fresh: [] };
+
+          const amount = fresh.length * reward;
+          const now = new Date().toLocaleString();
+          const newEntries = fresh.map(() => ({ title: 'Referral Bonus', amount: reward, type: 'earn', status: 'Completed', date: now }));
+          const history = [...newEntries, ...(data.transactionHistory || [])].slice(0, 30);
+          const bonus = Number(data.balances?.bonus || 0) + amount;
+          const earnings = Number(data.referralEarnings || 0) + amount;
+          const rewarded = new Set([...already, ...fresh]);
+
+          tx.update(userDocRef, {
+            'balances.bonus': bonus,
+            referralEarnings: earnings,
+            rewardedReferrals: Array.from(rewarded),
+            transactionHistory: history
+          });
+          return { rewarded, fresh, amount, bonus, earnings, history };
+        });
+
+        localStorage.setItem(userStorageKey('rewarded_refs'), JSON.stringify(Array.from(outcome.rewarded)));
+        if (outcome.fresh && outcome.fresh.length) {
+          localStorage.setItem(userStorageKey('bonus'), String(outcome.bonus));
+          localStorage.setItem(userStorageKey('referral_earnings'), String(outcome.earnings));
+          localStorage.setItem(userStorageKey('tx_history'), JSON.stringify(outcome.history));
+          renderBalances();
+          renderTxHistory();
+          renderReferralEarnings(outcome.earnings);
+          showToast(`🎉 You earned ${formatNGN(outcome.amount)} referral bonus!`);
+        }
+        return outcome.rewarded;
+      } catch (e) {
+        console.warn('Referral reward could not be credited:', e);
+        return cached();
+      }
+    }
+
     async function loadReferredUsers(username, currentUid) {
       const referralsList = document.getElementById('referralsList');
       const totalCountEl = document.getElementById('totalReferredCount');
       const totalInvestedEl = document.getElementById('totalReferredInvested');
+      const reward = Number(window.CONFIG?.REFERRAL_REWARD) || 500;
+      const mode = window.CONFIG?.REFERRAL_REWARD_ON || 'signup';
 
       try {
         const refsRef = collection(db, 'referrals');
@@ -221,21 +271,19 @@ document.addEventListener('DOMContentLoaded', () => {
         results.forEach(r => {
           if (r.status === 'fulfilled') {
             r.value.forEach(docSnap => {
-              if (docSnap.id !== currentUid) membersMap.set(docSnap.id, docSnap.data());
+              if (docSnap.id !== currentUid) membersMap.set(docSnap.id, { ...docSnap.data(), uid: docSnap.id });
             });
           } else {
             failed++;
-            console.warn('Referral query failed:', r.reason);
           }
         });
 
         if (failed === results.length) {
-          if (referralsList) referralsList.innerHTML = '<li class="history-empty muted">Could not load your referrals right now. Please refresh.</li>';
+          if (referralsList) referralsList.innerHTML = '<li class="history-empty muted">Could not load referrals right now.</li>';
           return;
         }
 
-        const members = Array.from(membersMap.values())
-          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        const members = Array.from(membersMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         localStorage.setItem(userStorageKey('referral_count'), String(members.length));
         if (totalCountEl) totalCountEl.textContent = members.length;
 
@@ -245,6 +293,11 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
+        const eligible = members
+          .filter(m => mode === 'signup' || Number(m.invested || 0) > 0)
+          .map(m => m.uid);
+        const rewardedSet = await creditReferralRewards(eligible);
+
         let totalTeamVolume = 0;
         const listHtml = members.map(member => {
           const memberName = escapeHtml(member.fullName || member.username || 'Member');
@@ -252,6 +305,10 @@ document.addEventListener('DOMContentLoaded', () => {
           const memberInvested = Number(member.invested || 0);
           totalTeamVolume += memberInvested;
           const joinedDate = member.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'Active Member';
+          const rewarded = rewardedSet.has(member.uid);
+          const bonusLine = rewarded
+            ? `<small style="display: block; color: var(--accent-emerald); font-weight: 600; font-size: 0.72rem;">+${formatNGN(reward)} bonus earned</small>`
+            : `<small style="display: block; color: #f59e0b; font-size: 0.72rem;">${formatNGN(reward)} pending</small>`;
 
           return `
             <li class="history-item">
@@ -264,6 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   ${formatNGN(memberInvested)}
                 </span>
                 <small style="display: block; color: var(--text-muted); font-size: 0.72rem;">Invested</small>
+                ${bonusLine}
               </div>
             </li>
           `;
@@ -351,9 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Bank details saved successfully.');
     });
 
-    // -------------------------------------------------------------
-    // WITHDRAWALS & REFERRAL GATE VALIDATION
-    // -------------------------------------------------------------
+    // WITHDRAWALS & ADMIN QUEUE HANDLER
     const withdrawAmountModal = document.getElementById('withdrawAmountModal');
     const closeWithdrawModal = document.getElementById('closeWithdrawModal');
     const withdrawAmountForm = document.getElementById('withdrawAmountForm');
@@ -363,19 +419,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const referralRequiredModal = document.getElementById('referralRequiredModal');
     let currentWithdrawType = null;
 
-    // Checks if a non-investing user has invited at least one person
     function canUserWithdraw() {
       const capital = getCapital();
-      if (capital > 0) return true; // Active investors can withdraw freely
-
-      // Has no capital: check if they invited at least 1 person
-      const refCount = getReferralCount();
-      return refCount >= 1;
+      if (capital > 0) return true;
+      return getReferralCount() >= 1;
     }
 
     function promptWithdraw(type) {
       if (!isWithdrawalDay()) {
-        showToast('Withdrawals are only processed on Saturdays. Please try again on Saturday.');
+        showToast('Withdrawals are only processed on Saturdays.');
         return;
       }
 
@@ -414,6 +466,36 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('withdrawTaskBtn')?.addEventListener('click', () => promptWithdraw('task'));
     closeWithdrawModal?.addEventListener('click', () => withdrawAmountModal?.classList.add('hidden'));
 
+    function submitWithdrawalToAdmin(amount, typeLabel, balanceType) {
+      const bank = getSavedBank() || {};
+      const kyc = JSON.parse(localStorage.getItem(userStorageKey('kyc_data')) || 'null');
+      const reqId = Date.now().toString().slice(-6);
+
+      const requestItem = {
+        id: reqId,
+        uid: uid,
+        userName: (JSON.parse(localStorage.getItem(userStorageKey('profile')) || '{}')).fullName || user.displayName || 'FeedCoin User',
+        userEmail: user.email || '',
+        amount: amount,
+        typeLabel: typeLabel,
+        balanceType: balanceType,
+        bankName: bank.bankName || 'N/A',
+        accountNumber: bank.accountNumber || 'N/A',
+        accountHolder: bank.accountHolder || 'N/A',
+        isKycVerified: Boolean(kyc?.isVerified),
+        status: 'Pending',
+        createdAt: new Date().toLocaleString()
+      };
+
+      // Submit to Admin Queue
+      let adminRequests = JSON.parse(localStorage.getItem('fc_admin_withdrawal_requests') || '[]');
+      adminRequests.unshift(requestItem);
+      localStorage.setItem('fc_admin_withdrawal_requests', JSON.stringify(adminRequests));
+
+      // Append to User's Transaction History
+      recordHistory(`Withdrawal (#${reqId}) - ${typeLabel}`, amount, 'withdraw', 'Pending', reqId, balanceType);
+    }
+
     withdrawAmountForm?.addEventListener('submit', (e) => {
       e.preventDefault();
       const amount = parseFloat(withdrawAmountInput.value) || 0;
@@ -424,16 +506,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      const balanceType = currentWithdrawType;
       if (currentWithdrawType === 'bonus') {
         setBonus(avail - amount);
       } else {
         setTaskBal(avail - amount);
       }
 
-      recordHistory('Withdrawal Pending', amount, 'withdraw');
+      submitWithdrawalToAdmin(amount, currentWithdrawType === 'bonus' ? 'Investment Bonus' : 'Task Rewards', balanceType);
       withdrawAmountModal?.classList.add('hidden');
       renderBalances();
-      showToast('Withdrawal submitted for Saturday processing!');
+      showToast('Withdrawal queued! Status: Pending.');
     });
 
     // WITHDRAW ALL
@@ -445,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('withdrawAllBtn')?.addEventListener('click', () => {
       if (!isWithdrawalDay()) {
-        showToast('Withdrawals are only processed on Saturdays. Please try again on Saturday.');
+        showToast('Withdrawals are only processed on Saturdays.');
         return;
       }
 
@@ -487,18 +570,58 @@ document.addEventListener('DOMContentLoaded', () => {
       setBonus(0);
       setTaskBal(0);
 
-      recordHistory('Full Account Withdrawal', total, 'withdraw');
+      submitWithdrawalToAdmin(total, 'Full Account Withdrawal', 'all');
       withdrawAllModal?.classList.add('hidden');
       renderBalances();
-      showToast('Withdrawal submitted for Saturday processing!');
+      showToast('Withdrawal queued! Status: Pending.');
     });
 
-    function recordHistory(title, amount, type = 'earn') {
+    // SYNC ADMIN DECISIONS & AUTO-REFUND ON REJECTION
+    function syncAdminWithdrawalDecisions() {
+      const adminRequests = JSON.parse(localStorage.getItem('fc_admin_withdrawal_requests') || '[]');
+      let history = JSON.parse(localStorage.getItem(userStorageKey('tx_history')) || '[]');
+      let modified = false;
+
+      history.forEach(item => {
+        if (item.type === 'withdraw' && item.id) {
+          const match = adminRequests.find(r => r.id === item.id);
+          if (match && match.status !== item.status) {
+            item.status = match.status; // 'Approved' or 'Rejected'
+            modified = true;
+
+            // Refund if rejected
+            if (match.status === 'Rejected' && !item.refunded) {
+              item.refunded = true;
+              const amt = Number(match.amount || 0);
+              if (item.balanceType === 'bonus') {
+                setBonus(getBonus() + amt);
+              } else if (item.balanceType === 'task') {
+                setTaskBal(getTaskBal() + amt);
+              } else {
+                setCapital(getCapital() + amt);
+              }
+              showToast(`Withdrawal #${item.id} was rejected. Funds returned to balance.`);
+            }
+          }
+        }
+      });
+
+      if (modified) {
+        localStorage.setItem(userStorageKey('tx_history'), JSON.stringify(history));
+        saveUserField('transactionHistory', history);
+        renderBalances();
+      }
+    }
+
+    function recordHistory(title, amount, type = 'earn', status = 'Completed', reqId = null, balanceType = '') {
       const history = JSON.parse(localStorage.getItem(userStorageKey('tx_history')) || '[]');
       history.unshift({
+        id: reqId || Date.now().toString().slice(-6),
         title,
         amount,
         type,
+        status,
+        balanceType,
         date: new Date().toLocaleString()
       });
       const updatedHistory = history.slice(0, 30);
@@ -512,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTxHistoryFromList(history);
     }
 
-    // TAP MINING
+    // DAILY TAP MINING
     const coinBtn = document.getElementById('CoinBtn');
     coinBtn?.addEventListener('click', () => {
       const lastMined = parseInt(localStorage.getItem(userStorageKey('last_mined')) || '0', 10);
@@ -530,24 +653,23 @@ document.addEventListener('DOMContentLoaded', () => {
       const reward = 200;
       setTaskBal(getTaskBal() + reward);
       setYieldTotal(getYieldTotal() + reward);
-      recordHistory('Daily Tap Mining', reward, 'earn');
+      recordHistory('Daily Tap Mining', reward, 'earn', 'Completed');
       renderBalances();
       if (window.confetti) confetti();
       showToast(`Mined +${formatNGN(reward)} successfully!`);
     });
 
-    // Realtime changes listener from Firestore
     onSnapshot(userDocRef, snapshot => {
       if (!snapshot.exists()) return;
       applyAccountData(snapshot.data());
     }, () => console.warn('Sync lost or offline.'));
+
+    setInterval(syncAdminWithdrawalDecisions, 3000);
   })().catch(error => {
     console.error('Session initialization error:', error);
   });
 
-  // -------------------------------------------------------------
   // 3. UI RENDERING UTILITIES
-  // -------------------------------------------------------------
   function renderBalancesFromValues(cap, bon, tsk, yld) {
     const total = cap + bon + tsk;
     const totalEl = document.getElementById('totalCoins');
@@ -598,17 +720,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const txList = document.getElementById('txList');
     const historyList = document.getElementById('historyList');
 
+    const getBadge = (status) => {
+      if (status === 'Approved' || status === 'Successful') {
+        return '<span class="status-badge" style="color:#10b981; background:rgba(16,185,129,0.15); padding:3px 10px; border-radius:99px; font-size:0.75rem; font-weight:700;">Successful ✓</span>';
+      }
+      if (status === 'Rejected') {
+        return '<span class="status-badge" style="color:#ef4444; background:rgba(239,68,68,0.15); padding:3px 10px; border-radius:99px; font-size:0.75rem; font-weight:700;">Rejected ✕</span>';
+      }
+      return '<span class="status-badge" style="color:#f59e0b; background:rgba(245,158,11,0.15); padding:3px 10px; border-radius:99px; font-size:0.75rem; font-weight:700;">Pending...</span>';
+    };
+
     if (txList) {
       if (!history || history.length === 0) {
         txList.innerHTML = '<li class="history-empty muted">No transactions yet.</li>';
       } else {
         txList.innerHTML = history.map(item => `
-          <li class="history-item">
+          <li class="history-item" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
               <strong>${item.title}</strong>
-              <small>${item.date}</small>
+              <small style="display:block;">${item.date}</small>
             </div>
-            <span class="earned-amount">${formatNGN(item.amount)}</span>
+            <div style="text-align:right;">
+              <span class="earned-amount">${formatNGN(item.amount)}</span>
+              <div style="margin-top:4px;">${item.type === 'withdraw' ? getBadge(item.status) : ''}</div>
+            </div>
           </li>
         `).join('');
       }
@@ -620,12 +755,15 @@ document.addEventListener('DOMContentLoaded', () => {
         historyList.innerHTML = '<li class="history-empty muted">No withdrawal history yet.</li>';
       } else {
         historyList.innerHTML = withdrawals.map(w => `
-          <li class="history-item">
+          <li class="history-item" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
               <strong>${w.title}</strong>
-              <small>${w.date}</small>
+              <small style="display:block;">${w.date}</small>
             </div>
-            <span class="earned-amount">${formatNGN(w.amount)}</span>
+            <div style="text-align:right;">
+              <span class="earned-amount">${formatNGN(w.amount)}</span>
+              <div style="margin-top:4px;">${getBadge(w.status)}</div>
+            </div>
           </li>
         `).join('');
       }
@@ -654,9 +792,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // -------------------------------------------------------------
-  // 4. NAVIGATION, TABS & GLOBAL CONTROLS
-  // -------------------------------------------------------------
+  // 4. NAVIGATION, TABS & CONTROLS
   const tabLinks = document.querySelectorAll('.tab-link');
   const tabPanes = document.querySelectorAll('.dashboard-tab-pane');
 
@@ -733,9 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // -------------------------------------------------------------
-  // 5. LOCAL CACHED POLICY POPUP CONTROLLER
-  // -------------------------------------------------------------
+  // 5. CACHED POLICY POPUP
   const policyModal = document.getElementById('policyNoticeModal');
   const closeNoticeBtn = document.getElementById('closePolicyNotice');
   const acceptPolicyBtn = document.getElementById('acceptPolicyBtn');
